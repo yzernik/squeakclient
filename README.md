@@ -26,6 +26,11 @@ target/SqueakClient.app/Contents/MacOS/SqueakClient --network=testnet --log-leve
 Docker
 ======
 
+First, initialize submodule
+```
+git submodule update --init --recursive
+```
+
 Set up X windows:
 https://cntnr.io/running-guis-with-docker-on-mac-os-x-a14df6a76efc
 
@@ -52,6 +57,6 @@ Testing
 
 ```
 docker-compose -f docker-compose.yml -f docker-compose.test.yml build
-docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
+docker-compose -f docker-compose.yml -f docker-compose.test.yml up
 ```
 then in `Peers` tab, add peer connection to other peer.
