@@ -1,0 +1,28 @@
+version: '2'
+services:
+
+    lnd_ltc:
+      extends: lnd
+      container_name: lnd_ltc
+      links:
+          - "ltcd:blockchain"
+
+    lnd_btc:
+      extends: lnd
+      container_name: lnd_btc
+      links:
+          - "btcd:blockchain"
+
+    sqk_btc:
+      extends: sqk
+      container_name: sqk_btc
+      links:
+          - "btcd:blockchain"
+          - "lnd_btc:lnd"
+
+    sqk_ltc:
+      extends: sqk
+      container_name: sqk_ltc
+      links:
+          - "ltcd:blockchain"
+          - "lnd_ltc:lnd"

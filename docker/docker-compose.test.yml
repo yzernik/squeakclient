@@ -1,0 +1,41 @@
+version: '2'
+services:
+
+    lnd_alice:
+      extends: lnd
+      container_name: lnd_alice
+      links:
+          - "btcd:blockchain"
+
+    lnd_bob:
+      extends: lnd
+      container_name: lnd_bob
+      links:
+          - "btcd:blockchain"
+
+    lnd_carol:
+      extends: lnd
+      container_name: lnd_carol
+      links:
+          - "btcd:blockchain"
+
+    sqk_alice:
+      extends: sqk
+      container_name: sqk_alice
+      links:
+          - "btcd:blockchain"
+          - "lnd_alice:lnd"
+
+    sqk_bob:
+      extends: sqk
+      container_name: sqk_bob
+      links:
+          - "btcd:blockchain"
+          - "lnd_bob:lnd"
+
+    sqk_carol:
+      extends: sqk
+      container_name: sqk_carol
+      links:
+          - "btcd:blockchain"
+          - "lnd_carol:lnd"

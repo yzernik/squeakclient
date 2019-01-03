@@ -1,0 +1,31 @@
+from typing import List
+from typing import Mapping
+
+from squeak.core import CSqueak
+from squeak.core import CSqueakHeader
+
+from squeakclient.squeaknode.core.stores.squeak_store import SqueakStore
+
+
+class MemorySqueakStore(SqueakStore):
+
+    def __init__(self):
+        self.squeaks: Mapping[bytes, CSqueak] = {}
+
+    def get_squeaks(self) -> List[bytes]:
+        return self.squeaks.values()
+
+    def get_squeak(self, bytes) -> CSqueak:
+        pass
+
+    def add_squeak(self, squeak: CSqueak) -> None:
+        key = squeak.GetHash()
+        self.squeaks[key] = squeak
+
+    def remove_squeak(self, squeak_hash: bytes) -> None:
+        del self.squeaks[squeak_hash]
+
+    def get_squeak_headers_created_by(self, created_by: bytes) -> List[CSqueakHeader]:
+        return [saved_squeak for saved_squeak
+                in self.squeaks
+                if saved_squeak.squeak.vchPubkey == created_by]
