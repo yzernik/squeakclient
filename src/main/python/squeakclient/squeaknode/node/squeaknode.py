@@ -1,6 +1,7 @@
 import logging
 
 from squeak.messages import msg_pong
+from squeak.messages import msg_squeak
 
 from squeakclient.squeaknode.core.stores.storage import Storage
 from squeakclient.squeaknode.node.handshakenode import HandshakeNode
@@ -28,6 +29,10 @@ class SqueakNode(HandshakeNode):
             self.handle_addr(msg, peer)
         if msg.command == b'inv':
             self.handle_inv(msg, peer)
+        if msg.command == b'getsqueaks':
+            self.handle_getsqueaks(msg, peer)
+        if msg.command == b'squeak':
+            self.handle_squeak(msg, peer)
 
     def handle_ping(self, msg, peer):
         nonce = msg.nonce
@@ -54,12 +59,18 @@ class SqueakNode(HandshakeNode):
         pass
 
     def handle_getsqueaks(self, msg, peer):
-        # TODO: query squeaks storage, respond with inv message.
-        pass
+        locator = msg.locator
+        squeaks = self.storage.get_squeak_store().get_squeaks_by_locator(locator)
+        logger.info('Found squeaks: {} in response to getsqueaks from {}'.format(squeaks, peer))
+        for squeak in squeaks:
+            squeak_msg = msg_squeak(squeak=squeak)
+            self.send_msg(peer, squeak_msg)
 
     def handle_squeak(self, msg, peer):
-        # If squeak is interesting, respond with getoffer msg.
-        pass
+        # TODO: If squeak is interesting, respond with getoffer msg.
+        squeak = msg.squeak
+        logger.info('Received squeak {} from peer {}'.format(squeak, peer))
+        self.add_squeak(squeak)
 
     def handle_getoffer(self, msg, peer):
         # Respond with offer msg.

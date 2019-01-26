@@ -3,6 +3,7 @@ from typing import Mapping
 
 from squeak.core import CSqueak
 from squeak.core import CSqueakHeader
+from squeak.net import CSqueakLocator
 
 from squeakclient.squeaknode.core.stores.squeak_store import SqueakStore
 
@@ -13,7 +14,7 @@ class MemorySqueakStore(SqueakStore):
         self.squeaks: Mapping[bytes, CSqueak] = {}
 
     def get_squeaks(self) -> List[bytes]:
-        return self.squeaks.values()
+        return list(self.squeaks.values())
 
     def get_squeak(self, bytes) -> CSqueak:
         pass
@@ -29,3 +30,8 @@ class MemorySqueakStore(SqueakStore):
         return [saved_squeak for saved_squeak
                 in self.squeaks
                 if saved_squeak.squeak.vchPubkey == created_by]
+
+    def get_squeaks_by_locator(self, locator: CSqueakLocator) -> List[CSqueak]:
+        return [squeak for hash, squeak
+                in self.squeaks.items()
+                if self._squeak_in_locator(squeak, locator)]

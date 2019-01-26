@@ -53,6 +53,9 @@ class PeerNode(object):
                 for seed_peer in get_seed_peer_addresses():
                     self.add_address(seed_peer)
 
+            # Request data from peers
+            self.find_squeaks()
+
             # Sleep
             time.sleep(UPDATE_THREAD_SLEEP_TIME)
 
@@ -154,6 +157,11 @@ class PeerNode(object):
 
     def on_connect(self, peer):
         """Action to take when a new peer connection is made.
+        """
+        pass
+
+    def find_squeaks(self):
+        """Locate squeaks from other connected peers.
         """
         pass
 

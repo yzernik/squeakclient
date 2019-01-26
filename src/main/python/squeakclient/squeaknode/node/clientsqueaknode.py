@@ -8,6 +8,9 @@ from squeakclient.squeaknode.core.squeak_maker import SqueakMaker
 
 from squeak.core.signing import CSigningKey
 from squeak.core.signing import CSqueakAddress
+from squeak.net import CInterested
+from squeak.net import CSqueakLocator
+from squeak.messages import msg_getsqueaks
 
 
 logger = logging.getLogger(__name__)
@@ -23,6 +26,8 @@ class ClientSqueakNode(SqueakNode):
         self.blockchain = blockchain
         self.key_lock = threading.Lock()
         self.key_changed_callback = None
+        self.squeaks_changed_callback = None
+        self.follows_changed_callback = None
 
     def start(self):
         super().start()
@@ -73,6 +78,44 @@ class ClientSqueakNode(SqueakNode):
 
     def add_squeak(self, squeak):
         self.storage.get_squeak_store().add_squeak(squeak)
+        self.on_squeaks_changed()
+
+    def on_squeaks_changed(self):
+        logger.info('Number of stored squeaks {}'.format(len(self.storage.get_squeak_store().get_squeaks())))
+        if self.squeaks_changed_callback:
+            squeaks = self.storage.get_squeak_store().get_squeaks()
+            self.squeaks_changed_callback(squeaks)
+
+    def listen_squeaks_changed(self, callback):
+        self.squeaks_changed_callback = callback
+
+    def add_follow(self, follow):
+        self.storage.get_follow_store().add_follow(follow)
+        self.on_follows_changed()
+
+    def on_follows_changed(self):
+        logger.info('Number of follows {}'.format(len(self.storage.get_follow_store().get_follows())))
+        if self.follows_changed_callback:
+            follows = self.storage.get_follow_store().get_follows()
+            self.follows_changed_callback(follows)
+
+    def listen_follows_changed(self, callback):
+        self.follows_changed_callback = callback
+
+    def get_follows(self):
+        """Get the squeak locator message to locate squeaks from other peers."""
+        return self.storage.get_follow_store().get_follows()
+
+    def find_squeaks(self):
+        locator = self.get_follow_locator()
+        getsqueaks = msg_getsqueaks(locator=locator)
+        self.broadcast_msg(getsqueaks)
+
+    def get_follow_locator(self):
+        follows = self.storage.get_follow_store().get_follows()
+        interesteds = [CInterested(address=follow)
+                       for follow in follows]
+        return CSqueakLocator(vInterested=interesteds)
 
 
 class ClientNodeError(Exception):

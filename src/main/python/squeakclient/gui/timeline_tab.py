@@ -13,6 +13,8 @@ from PyQt5.QtWidgets import QLineEdit
 from PyQt5.QtWidgets import QListWidget
 from PyQt5.QtWidgets import QListWidgetItem
 
+from squeakclient.squeaknode.core.encoding import decode_content
+
 
 class TimelineWidget(QWidget):
     def __init__(self, client_node):
@@ -112,24 +114,19 @@ class SqueakList(QListWidget):
             self.set_squeaks_list_display(squeaks)
 
     def set_squeaks_list_display(self, squeaks):
-        # Remove dropped squeaks
-        squeak_names = [squeak.address_string for squeak in squeaks]
+        # Remove current squeaks
         for i in range(len(self) - 1, -1, -1):
             item = self.item(i)
-            if item.text() not in squeak_names:
-                self.takeItem(i)
+            self.takeItem(i)
 
         # Add new squeaks
-        items = self.get_items()
-        displayed_squeaks = [item.text() for item in items]
+        squeaks.sort(key=lambda squeak: squeak.nBlockHeight, reverse=True)
         for squeak in squeaks:
             item = SqueakListItem(squeak)
-            if item.text() not in displayed_squeaks:
-                self.addItem(item)
+            self.addItem(item)
 
     def register_squeaks_changed_listener(self):
-        # TODO
-        pass
+        self.client_node.listen_squeaks_changed(self.squeaksUpdatedEvent)
 
     def get_items(self):
         ret = []
@@ -142,5 +139,9 @@ class SqueakList(QListWidget):
 class SqueakListItem(QListWidgetItem):
 
     def __init__(self, squeak):
-        super().__init__(squeak.address_string)
+        super().__init__(
+            decode_content(
+                squeak.GetDecryptedContent()
+            ),
+        )
         self.squeak = squeak

@@ -98,7 +98,7 @@ services:
           - shared:/rpc
           - /tmp/.X11-unix:/tmp/.X11-unix
         environment:
-          - DISPLAY=192.168.86.115:0
+          - DISPLAY=10.0.0.10:0
         entrypoint: ["./start-sqk.sh"]
 
 volumes:
