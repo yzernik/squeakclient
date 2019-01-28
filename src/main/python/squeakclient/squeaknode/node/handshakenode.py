@@ -1,6 +1,5 @@
 import logging
 
-from squeak.messages import msg_getaddr
 from squeak.messages import msg_verack
 from squeak.messages import msg_version
 
@@ -39,7 +38,7 @@ class HandshakeNode(PeerNode):
         elif msg.command == b'verack':
             self.handle_verack(msg, peer)
         elif peer.handshake_complete:
-            self.handle_connected_peer_msg(msg, peer)
+            self.peer_msg_handler.handle_peer_message(msg, peer)
 
     def handle_version(self, msg, peer):
         peer.version = msg
@@ -56,9 +55,8 @@ class HandshakeNode(PeerNode):
             self.initialize_connection(peer)
 
     def initialize_connection(self, peer):
-        peer.send_ping()
-        if peer.outgoing:
-            self.send_msg(peer, msg_getaddr())
+        logger.debug('Initializing connection with {}'.format(peer))
+        self.peer_msg_handler.initialize_peer(peer)
 
     def version_pkt(self, peer):
         msg = msg_version()

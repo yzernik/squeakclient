@@ -1,121 +1,103 @@
 import logging
 import threading
+import time
 
-from squeakclient.squeaknode.core.stores.storage import Storage
-from squeakclient.squeaknode.node.squeaknode import SqueakNode
+from squeakclient.squeaknode.node.access import SigningKeyAccess
+from squeakclient.squeaknode.node.access import FollowsAccess
+from squeakclient.squeaknode.node.access import SqueaksAccess
 from squeakclient.squeaknode.core.blockchain import Blockchain
 from squeakclient.squeaknode.core.squeak_maker import SqueakMaker
+from squeakclient.squeaknode.core.stores.storage import Storage
+from squeakclient.squeaknode.node.handshakenode import HandshakeNode
+from squeakclient.squeaknode.node.squeaknode import ClientPeerMessageHandler
 
-from squeak.core.signing import CSigningKey
-from squeak.core.signing import CSqueakAddress
-from squeak.net import CInterested
-from squeak.net import CSqueakLocator
 from squeak.messages import msg_getsqueaks
+
+
+UPDATE_THREAD_SLEEP_TIME = 10
 
 
 logger = logging.getLogger(__name__)
 
 
-class ClientSqueakNode(SqueakNode):
+class ClientSqueakNode(object):
     """Network node that handles client commands.
     """
 
     def __init__(self, storage: Storage, blockchain: Blockchain) -> None:
-        super().__init__(storage=storage)
         self.storage = storage
         self.blockchain = blockchain
-        self.key_lock = threading.Lock()
-        self.key_changed_callback = None
-        self.squeaks_changed_callback = None
-        self.follows_changed_callback = None
+        self.peer_node = HandshakeNode()
+        self.signing_key_access = SigningKeyAccess(self.storage)
+        self.follows_access = FollowsAccess(self.storage)
+        self.squeaks_access = SqueaksAccess(self.storage)
+        self.peer_msg_handler = ClientPeerMessageHandler(self.peer_node, self.squeaks_access)
 
     def start(self):
-        super().start()
+        # Start network node
+        self.peer_node.start(
+            self.peer_msg_handler,
+        )
+
+        # Start Update thread
+        threading.Thread(target=self.update).start()
+
+    def update(self):
+        """Periodic task updates client."""
+        while True:
+            # Fetch data from other peers.
+            self.find_squeaks()
+
+            # Sleep
+            time.sleep(UPDATE_THREAD_SLEEP_TIME)
 
     def get_signing_key(self):
-        return self.storage.get_key_store().get_signing_key()
+        return self.signing_key_access.get_signing_key()
 
     def get_address(self):
-        key = self.get_signing_key()
-        return self.address_from_signing_key(key)
+        return self.signing_key_access.get_address()
 
     def set_signing_key(self, signing_key):
-        with self.key_lock:
-            self.storage.get_key_store().set_signing_key(signing_key)
-            self.on_key_changed()
+        self.signing_key_access.set_signing_key(signing_key)
 
     def generate_signing_key(self):
-        signing_key = CSigningKey.generate()
-        self.set_signing_key(signing_key)
-        return signing_key
-
-    def on_key_changed(self):
-        if self.key_changed_callback:
-            address = self.get_address()
-            logger.info('New address: {}'.format(address))
-            self.key_changed_callback(address)
+        self.signing_key_access.generate_signing_key()
 
     def listen_key_changed(self, callback):
-        self.key_changed_callback = callback
-
-    def address_from_signing_key(self, key):
-        verifying_key = key.get_verifying_key()
-        return CSqueakAddress.from_verifying_key(verifying_key)
+        self.signing_key_access.listen_key_changed(callback)
 
     def make_squeak(self, content):
         logger.debug('Trying to make squeak with content: {}'.format(content))
-        with self.key_lock:
-            key = self.get_signing_key()
-            if key is None:
-                logger.error('Missing signing key.')
-                raise MissingSigningKeyError()
-            else:
-                squeak_maker = SqueakMaker(key, self.blockchain)
-                squeak = squeak_maker.make_squeak(content)
-                logger.info('Made squeak: {}'.format(squeak))
-                self.add_squeak(squeak)
-                return squeak
+        key = self.get_signing_key()
+        if key is None:
+            logger.error('Missing signing key.')
+            raise MissingSigningKeyError()
+        else:
+            squeak_maker = SqueakMaker(key, self.blockchain)
+            squeak = squeak_maker.make_squeak(content)
+            logger.info('Made squeak: {}'.format(squeak))
+            self.add_squeak(squeak)
+            return squeak
 
     def add_squeak(self, squeak):
-        self.storage.get_squeak_store().add_squeak(squeak)
-        self.on_squeaks_changed()
-
-    def on_squeaks_changed(self):
-        logger.info('Number of stored squeaks {}'.format(len(self.storage.get_squeak_store().get_squeaks())))
-        if self.squeaks_changed_callback:
-            squeaks = self.storage.get_squeak_store().get_squeaks()
-            self.squeaks_changed_callback(squeaks)
+        self.squeaks_access.add_squeak(squeak)
 
     def listen_squeaks_changed(self, callback):
-        self.squeaks_changed_callback = callback
+        self.squeaks_access.listen_squeaks_changed(callback)
 
     def add_follow(self, follow):
-        self.storage.get_follow_store().add_follow(follow)
-        self.on_follows_changed()
-
-    def on_follows_changed(self):
-        logger.info('Number of follows {}'.format(len(self.storage.get_follow_store().get_follows())))
-        if self.follows_changed_callback:
-            follows = self.storage.get_follow_store().get_follows()
-            self.follows_changed_callback(follows)
+        self.follows_access.add_follow(follow)
 
     def listen_follows_changed(self, callback):
-        self.follows_changed_callback = callback
+        self.follows_access.listen_follows_changed(callback)
 
     def get_follows(self):
-        """Get the squeak locator message to locate squeaks from other peers."""
-        return self.storage.get_follow_store().get_follows()
+        self.follows_access.get_follows()
 
     def find_squeaks(self):
-        locator = self.get_follow_locator()
+        locator = self.follows_access.get_follow_locator()
         getsqueaks = msg_getsqueaks(locator=locator)
-        self.broadcast_msg(getsqueaks)
-
-    def get_follow_locator(self):
-        follows = self.storage.get_follow_store().get_follows()
-        interesteds = [CInterested(address=follow)
-                       for follow in follows]
-        return CSqueakLocator(vInterested=interesteds)
+        self.peer_node.broadcast_msg(getsqueaks)
 
 
 class ClientNodeError(Exception):

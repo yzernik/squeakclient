@@ -1,24 +1,35 @@
 import logging
 
+from squeak.messages import msg_getaddr
 from squeak.messages import msg_pong
 from squeak.messages import msg_squeak
 
-from squeakclient.squeaknode.core.stores.storage import Storage
-from squeakclient.squeaknode.node.handshakenode import HandshakeNode
+from squeakclient.squeaknode.node.peernode import PeerNode
+from squeakclient.squeaknode.node.peernode import PeerMessageHandler
+from squeakclient.squeaknode.node.access import SqueaksAccess
 
 
 logger = logging.getLogger(__name__)
 
 
-class SqueakNode(HandshakeNode):
-    """Network node that implements the network protocol.
+class ClientPeerMessageHandler(PeerMessageHandler):
+    """Handles incoming messages from peers.
     """
 
-    def __init__(self, storage: Storage) -> None:
+    def __init__(self, peer_node: PeerNode, squeaks_access: SqueaksAccess) -> None:
         super().__init__()
-        self.storage = storage
+        self.peer_node = peer_node
+        self.squeaks_access = squeaks_access
 
-    def handle_connected_peer_msg(self, msg, peer):
+    def initialize_peer(self, peer):
+        logger.debug('Initializing peer connection with {}'.format(peer))
+        peer.send_ping()
+        logger.debug('Sent ping to {}'.format(peer))
+        if peer.outgoing:
+            self.peer_node.send_msg(peer, msg_getaddr())
+            logger.debug('Sent getaddr msg to {}'.format(peer))
+
+    def handle_peer_message(self, msg, peer):
         """Handle messages from a peer with completed handshake."""
         logger.debug('Peer-connected msg {} from {}'.format(msg.command, peer))
         if msg.command == b'ping':
@@ -38,7 +49,7 @@ class SqueakNode(HandshakeNode):
         nonce = msg.nonce
         pong = msg_pong()
         pong.nonce = nonce
-        self.send_msg(peer, pong)
+        self.peer_node.send_msg(peer, pong)
 
     def handle_pong(self, msg, peer):
         peer.handle_pong(msg)
@@ -60,17 +71,17 @@ class SqueakNode(HandshakeNode):
 
     def handle_getsqueaks(self, msg, peer):
         locator = msg.locator
-        squeaks = self.storage.get_squeak_store().get_squeaks_by_locator(locator)
+        squeaks = self.squeaks_access.get_squeaks_by_locator(locator)
         logger.info('Found squeaks: {} in response to getsqueaks from {}'.format(squeaks, peer))
         for squeak in squeaks:
             squeak_msg = msg_squeak(squeak=squeak)
-            self.send_msg(peer, squeak_msg)
+            self.peer_node.send_msg(peer, squeak_msg)
 
     def handle_squeak(self, msg, peer):
         # TODO: If squeak is interesting, respond with getoffer msg.
         squeak = msg.squeak
         logger.info('Received squeak {} from peer {}'.format(squeak, peer))
-        self.add_squeak(squeak)
+        self.squeaks_access.add_squeak(squeak)
 
     def handle_getoffer(self, msg, peer):
         # Respond with offer msg.

@@ -4,7 +4,6 @@ import threading
 import logging
 
 import squeak.params
-from squeak.messages import msg_getaddr
 
 from squeakclient.squeaknode.node.peer import Peer
 
@@ -29,8 +28,11 @@ class PeerNode(object):
         self.peers_changed_callback = None
         self.ip = socket.gethostbyname('localhost')
         self.port = port or squeak.params.params.DEFAULT_PORT
+        self.peer_msg_handler = None
 
-    def start(self):
+    def start(self, peer_msg_handler):
+        self.peer_msg_handler = peer_msg_handler
+
         # Start Listen thread
         threading.Thread(target=self.accept_connections).start()
 
@@ -45,16 +47,8 @@ class PeerNode(object):
                 peer.health_check()
 
             # Connect to more peers
-            if len(self.peers) < self.min_peers:
-                logger.debug('Broadcasting getaddr')
-                self.broadcast_msg(msg_getaddr())
-
-                logger.debug('Connecting to seed peers.')
-                for seed_peer in get_seed_peer_addresses():
-                    self.add_address(seed_peer)
-
-            # Request data from peers
-            self.find_squeaks()
+            if len(self.peers) == 0:
+                self.connect_seed_peers()
 
             # Sleep
             time.sleep(UPDATE_THREAD_SLEEP_TIME)
@@ -160,10 +154,12 @@ class PeerNode(object):
         """
         pass
 
-    def find_squeaks(self):
-        """Locate squeaks from other connected peers.
+    def connect_seed_peers(self):
+        """Find more peers.
         """
-        pass
+        logger.debug('Connecting to seed peers.')
+        for seed_peer in get_seed_peer_addresses():
+            self.add_address(seed_peer)
 
 
 def resolve_hostname(hostname):
@@ -182,3 +178,12 @@ def get_seed_peer_addresses():
         address = resolve_hostname(seed_host)
         if address:
             yield address
+
+
+class PeerMessageHandler(object):
+
+    def initialize_peer(self, peer):
+        pass
+
+    def handle_peer_message(self, msg, peer):
+        pass

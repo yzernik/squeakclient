@@ -40,7 +40,7 @@ class MainWindow(QWidget):
         self.tabs.addTab(signing_tab, "Signing")
 
         # Add peers tab
-        peers_tab = PeersWidget(self.node)
+        peers_tab = PeersWidget(self.node.peer_node)
         self.tabs.addTab(peers_tab, "Peers")
 
         # Add funds tab
