@@ -4,6 +4,7 @@ from squeak.messages import msg_verack
 from squeak.messages import msg_version
 
 from squeakclient.squeaknode.node.peernode import PeerNode
+from squeakclient.squeaknode.util import generate_nonce
 
 
 HANDSHAKE_TIMEOUT = 30
@@ -26,6 +27,7 @@ class HandshakeNode(PeerNode):
     def on_connect(self, peer):
         logger.debug('Starting handshake with {}'.format(peer))
         version = self.version_pkt(peer)
+        peer.my_version = version
         self.send_msg(peer, version)
         peer.sent_version = True
 
@@ -41,9 +43,15 @@ class HandshakeNode(PeerNode):
             self.peer_msg_handler.handle_peer_message(msg, peer)
 
     def handle_version(self, msg, peer):
+        if msg.nNonce in self.get_peer_nonces():
+            logger.debug('Closing connection because of matching nonce with peer {}'.format(peer))
+            peer.close()
+            return
+
         peer.version = msg
         if not peer.sent_version:
             version = self.version_pkt(peer)
+            peer.my_version = version
             self.send_msg(peer, version)
             peer.sent_version = True
         self.send_msg(peer, msg_verack())
@@ -51,6 +59,7 @@ class HandshakeNode(PeerNode):
     def handle_verack(self, msg, peer):
         if peer.version is not None and peer.sent_version:
             peer.handshake_complete = True
+            self.on_peers_changed()
             logger.debug('Handshake complete with {}'.format(peer))
             self.initialize_connection(peer)
 
@@ -66,4 +75,10 @@ class HandshakeNode(PeerNode):
         msg.addrTo.port = server_port
         msg.addrFrom.ip = self.ip
         msg.addrFrom.port = self.port
+        msg.nNonce = generate_nonce()
         return msg
+
+    def get_peer_nonces(self):
+        peers = list(self.peers.values())
+        return [peer.my_version.nNonce if peer.my_version else None
+                for peer in peers]

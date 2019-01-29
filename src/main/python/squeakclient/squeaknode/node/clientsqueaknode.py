@@ -2,6 +2,10 @@ import logging
 import threading
 import time
 
+from squeak.messages import msg_getaddr
+from squeak.messages import msg_getsqueaks
+
+from squeakclient.squeaknode.node.access import PeersAccess
 from squeakclient.squeaknode.node.access import SigningKeyAccess
 from squeakclient.squeaknode.node.access import FollowsAccess
 from squeakclient.squeaknode.node.access import SqueaksAccess
@@ -10,8 +14,6 @@ from squeakclient.squeaknode.core.squeak_maker import SqueakMaker
 from squeakclient.squeaknode.core.stores.storage import Storage
 from squeakclient.squeaknode.node.handshakenode import HandshakeNode
 from squeakclient.squeaknode.node.squeaknode import ClientPeerMessageHandler
-
-from squeak.messages import msg_getsqueaks
 
 
 UPDATE_THREAD_SLEEP_TIME = 10
@@ -28,10 +30,11 @@ class ClientSqueakNode(object):
         self.storage = storage
         self.blockchain = blockchain
         self.peer_node = HandshakeNode()
+        self.peers_access = PeersAccess(self.peer_node)
         self.signing_key_access = SigningKeyAccess(self.storage)
         self.follows_access = FollowsAccess(self.storage)
         self.squeaks_access = SqueaksAccess(self.storage)
-        self.peer_msg_handler = ClientPeerMessageHandler(self.peer_node, self.squeaks_access)
+        self.peer_msg_handler = ClientPeerMessageHandler(self.peers_access, self.squeaks_access)
 
     def start(self):
         # Start network node
@@ -45,7 +48,10 @@ class ClientSqueakNode(object):
     def update(self):
         """Periodic task updates client."""
         while True:
-            # Fetch data from other peers.
+            # Find more peers if needed.
+            self.find_more_peers()
+
+            # Fetch squeak data from other peers.
             self.find_squeaks()
 
             # Sleep
@@ -98,6 +104,21 @@ class ClientSqueakNode(object):
         locator = self.follows_access.get_follow_locator()
         getsqueaks = msg_getsqueaks(locator=locator)
         self.peer_node.broadcast_msg(getsqueaks)
+
+    def connect_host(self, host):
+        self.peers_access.connect_host(host)
+
+    def get_peers(self):
+        return self.peers_access.get_connected_peers()
+
+    def listen_peers_changed(self, callback):
+        self.peers_access.listen_peers_changed(callback)
+
+    def find_more_peers(self):
+        peers = self.get_peers()
+        logger.info('Number of connected peers: {}'.format(len(peers)))
+        if len(peers) < self.peers_access.peer_node.min_peers:
+            self.peer_node.broadcast_msg(msg_getaddr())
 
 
 class ClientNodeError(Exception):

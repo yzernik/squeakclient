@@ -47,7 +47,7 @@ class PeerNode(object):
                 peer.health_check()
 
             # Connect to more peers
-            if len(self.peers) == 0:
+            if len(self.get_connected_peers()) == 0:
                 self.connect_seed_peers()
 
             # Sleep
@@ -58,7 +58,6 @@ class PeerNode(object):
         listen_socket.bind(('', self.port))
         listen_socket.listen()
         while True:
-            logger.info('waiting for connection')
             peer_socket, address = listen_socket.accept()
             peer_socket.setblocking(True)
             peer = Peer(peer_socket, address)
@@ -114,7 +113,7 @@ class PeerNode(object):
 
     def add_address(self, address):
         """Add a new address."""
-        if len(self.peers) >= self.max_peers:
+        if len(self.get_connected_peers()) >= self.max_peers:
             return
         self.connect_address(address)
 
@@ -136,9 +135,9 @@ class PeerNode(object):
         self.connect_address(address)
 
     def on_peers_changed(self):
-        logger.info('Connected number of peers {}'.format(len(self.peers.keys())))
+        logger.info('Current number of peers {}'.format(len(self.get_connected_peers())))
         if self.peers_changed_callback:
-            peers = list(self.peers.values())
+            peers = self.get_connected_peers()
             self.peers_changed_callback(peers)
 
     def listen_peers_changed(self, callback):
@@ -157,9 +156,13 @@ class PeerNode(object):
     def connect_seed_peers(self):
         """Find more peers.
         """
-        logger.debug('Connecting to seed peers.')
         for seed_peer in get_seed_peer_addresses():
             self.add_address(seed_peer)
+
+    def get_connected_peers(self):
+        peers = list(self.peers.values())
+        return [peer for peer in peers
+                if peer.handshake_complete]
 
 
 def resolve_hostname(hostname):

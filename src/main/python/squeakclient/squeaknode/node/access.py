@@ -2,6 +2,7 @@ import logging
 import threading
 
 from squeakclient.squeaknode.core.stores.storage import Storage
+from squeakclient.squeaknode.node.peernode import PeerNode
 
 from squeak.core.signing import CSigningKey
 from squeak.core.signing import CSqueakAddress
@@ -109,3 +110,27 @@ class SqueaksAccess(object):
     def get_squeaks_by_locator(self, locator):
         with self.squeaks_lock:
             return self.storage.get_squeak_store().get_squeaks_by_locator(locator)
+
+
+class PeersAccess(object):
+
+    def __init__(self, peer_node: PeerNode) -> None:
+        self.peer_node = peer_node
+
+    def send_msg(self, peer, msg):
+        self.peer_node.send_msg(peer, msg)
+
+    def broadcast_msg(self, msg):
+        self.peer_node.broadcast_msg(msg)
+
+    def connect_host(self, host):
+        self.peer_node.connect_host(host)
+
+    def add_address(self, address):
+        self.peer_node.add_address(address)
+
+    def get_connected_peers(self):
+        return self.peer_node.get_connected_peers()
+
+    def listen_peers_changed(self, callback):
+        self.peer_node.listen_peers_changed(callback)

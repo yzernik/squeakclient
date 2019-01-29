@@ -39,7 +39,6 @@ class PeersWidget(QWidget):
 
     def add_peer(self):
         host, ok = QInputDialog.getText(self, 'New peer input', 'Enter the peer host:')
-        print("Trying to connect to host: " + host)
 
         if ok:
             try:

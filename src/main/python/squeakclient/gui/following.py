@@ -32,7 +32,6 @@ class FollowingWidget(QWidget):
 
     def add_follow(self):
         address, ok = QInputDialog.getText(self, 'New follow', 'Enter the public address:')
-        print("Adding new follow address: " + address)
 
         if ok:
             try:

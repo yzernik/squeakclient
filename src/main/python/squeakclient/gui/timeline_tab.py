@@ -110,28 +110,22 @@ class SqueakList(QListWidget):
 
     def squeaksUpdatedEvent(self, squeaks):
         # self.c.squeaks_updated.emit()
-        print("Updating squeaks in gui...", flush=True)
         with self.lock:
-            print("Updating squeaks and acquired lock...", flush=True)
             self.set_squeaks_list_display(squeaks)
 
     def set_squeaks_list_display(self, squeaks):
         # Remove dropped squeaks
         squeak_hashes = [squeak.GetHash() for squeak in squeaks]
-        print("Squeak hashes: " + str(squeak_hashes), flush=True)
         for i in range(len(self) - 1, -1, -1):
             item = self.item(i)
-            print("Existing item squeak hash: " + str(item.squeak.GetHash()), flush=True)
             if item.squeak.GetHash() not in squeak_hashes:
                 self.takeItem(i)
 
         # Add new squeaks
         items = self.get_items()
         item_hashes = [item.squeak.GetHash() for item in items]
-        print("Item hashes: " + str(item_hashes), flush=True)
         for squeak in squeaks:
             item = SqueakListItem(squeak)
-            print("New item squeak hash: " + str(item.squeak.GetHash()), flush=True)
             if item.squeak.GetHash() not in item_hashes:
                 self.addItem(item)
 

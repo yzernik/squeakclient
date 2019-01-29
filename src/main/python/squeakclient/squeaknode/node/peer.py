@@ -1,13 +1,15 @@
-import random
 import time
 import logging
 
 from io import BytesIO
 
 from bitcoin.core.serialize import SerializationTruncationError
+from bitcoin.net import CAddress
 
 from squeak.messages import MsgSerializable
 from squeak.messages import msg_ping
+
+from squeakclient.squeaknode.util import generate_nonce
 
 
 MAX_MESSAGE_LEN = 1048576
@@ -24,11 +26,12 @@ logger = logging.getLogger(__name__)
 class Peer(object):
 
     def __init__(self, peer_socket, address, outgoing=False):
-        time_now = time.time()
+        time_now = int(time.time())
         self.peer_socket = peer_socket
         self.address = address
         self.outgoing = outgoing
         self.connect_time = time_now
+        self.my_version = None
         self.version = None
         self.sent_version = False
         self.handshake_complete = False
@@ -46,6 +49,15 @@ class Peer(object):
     def address_string(self):
         ip, port = self.address
         return '{}:{}'.format(ip, port)
+
+    @property
+    def caddress(self):
+        ip, port = self.address
+        caddress = CAddress()
+        caddress.nTime = self.connect_time
+        caddress.ip = ip
+        caddress.port = port
+        return caddress
 
     def read_data_buffer(self):
         return self.recv_data_buffer.read()
@@ -112,7 +124,7 @@ class Peer(object):
             self.send_ping()
 
     def send_ping(self):
-        nonce = random.SystemRandom().getrandbits(64)
+        nonce = generate_nonce()
         sent_time = time.time()
         ping = msg_ping()
         ping.nonce = nonce
