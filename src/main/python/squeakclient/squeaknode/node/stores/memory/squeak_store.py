@@ -13,11 +13,14 @@ class MemorySqueakStore(SqueakStore):
     def __init__(self):
         self.squeaks: Mapping[bytes, CSqueak] = {}
 
-    def get_squeaks(self) -> List[bytes]:
+    def get_hashes(self) -> List[bytes]:
+        return list(self.squeaks.keys())
+
+    def get_squeaks(self) -> List[CSqueak]:
         return list(self.squeaks.values())
 
-    def get_squeak(self, bytes) -> CSqueak:
-        pass
+    def get_squeak(self, squeak_hash: bytes) -> CSqueak:
+        return self.squeaks.get(squeak_hash)
 
     def add_squeak(self, squeak: CSqueak) -> None:
         key = squeak.GetHash()

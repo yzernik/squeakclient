@@ -22,11 +22,15 @@ class SqueakStore(ABC):
     """
 
     @abstractmethod
-    def get_squeaks(self) -> List[bytes]:
+    def get_hashes(self) -> List[bytes]:
         pass
 
     @abstractmethod
-    def get_squeak(self, bytes) -> CSqueak:
+    def get_squeaks(self) -> List[CSqueak]:
+        pass
+
+    @abstractmethod
+    def get_squeak(self, squeak_hash: bytes) -> CSqueak:
         pass
 
     @abstractmethod

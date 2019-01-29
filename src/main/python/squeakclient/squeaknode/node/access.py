@@ -94,6 +94,9 @@ class SqueaksAccess(object):
         self.squeaks_lock = threading.Lock()
         self.squeaks_changed_callback = None
 
+    def get_squeak(self, squeak_hash):
+        return self.storage.get_squeak_store().get_squeak(squeak_hash)
+
     def add_squeak(self, squeak):
         with self.squeaks_lock:
             self.storage.get_squeak_store().add_squeak(squeak)
@@ -110,6 +113,9 @@ class SqueaksAccess(object):
     def get_squeaks_by_locator(self, locator):
         with self.squeaks_lock:
             return self.storage.get_squeak_store().get_squeaks_by_locator(locator)
+
+    def get_squeak_hashes(self):
+        return self.storage.get_squeak_store().get_hashes()
 
 
 class PeersAccess(object):

@@ -3,7 +3,10 @@ import logging
 from squeak.messages import msg_addr
 from squeak.messages import msg_getaddr
 from squeak.messages import msg_pong
+from squeak.messages import msg_inv
+from squeak.messages import msg_getdata
 from squeak.messages import msg_squeak
+from squeak.net import CInv
 
 from squeakclient.squeaknode.node.peernode import PeerMessageHandler
 from squeakclient.squeaknode.node.access import SqueaksAccess
@@ -25,10 +28,8 @@ class ClientPeerMessageHandler(PeerMessageHandler):
     def initialize_peer(self, peer):
         logger.debug('Initializing peer connection with {}'.format(peer))
         peer.send_ping()
-        logger.debug('Sent ping to {}'.format(peer))
         if peer.outgoing:
             self.peers_access.send_msg(peer, msg_getaddr())
-            logger.debug('Sent getaddr msg to {}'.format(peer))
 
     def handle_peer_message(self, msg, peer):
         """Handle messages from a peer with completed handshake."""
@@ -46,6 +47,8 @@ class ClientPeerMessageHandler(PeerMessageHandler):
             self.handle_getsqueaks(msg, peer)
         if msg.command == b'squeak':
             self.handle_squeak(msg, peer)
+        if msg.command == b'getdata':
+            self.handle_getdata(msg, peer)
 
     def handle_ping(self, msg, peer):
         nonce = msg.nonce
@@ -68,12 +71,25 @@ class ClientPeerMessageHandler(PeerMessageHandler):
         self.peers_access.send_msg(peer, addr_msg)
 
     def handle_inv(self, msg, peer):
-        # TODO: Respond with getdata msg with the list of inv_vects.
-        pass
+        invs = msg.inv
+        saved_hashes = set(self.squeaks_access.get_squeak_hashes())
+        received_hashes = set([inv.hash
+                               for inv in invs
+                               if inv.type == 1])
+        new_hashes = received_hashes - saved_hashes
+
+        new_invs = [CInv(type=1, hash=hash)
+                    for hash in new_hashes]
+        getdata_msg = msg_getdata(inv=new_invs)
+        self.peers_access.send_msg(peer, getdata_msg)
 
     def handle_getdata(self, msg, peer):
-        # TODO: For each inv_vect, respond with squeak msg.
-        pass
+        invs = msg.inv
+        for inv in invs:
+            if inv.type == 1:
+                squeak = self.squeaks_access.get_squeak(inv.hash)
+                squeak_msg = msg_squeak(squeak=squeak)
+                self.peers_access.send_msg(peer, squeak_msg)
 
     def handle_notfound(self, msg, peer):
         pass
@@ -81,15 +97,14 @@ class ClientPeerMessageHandler(PeerMessageHandler):
     def handle_getsqueaks(self, msg, peer):
         locator = msg.locator
         squeaks = self.squeaks_access.get_squeaks_by_locator(locator)
-        logger.info('Found squeaks: {} in response to getsqueaks from {}'.format(squeaks, peer))
-        for squeak in squeaks:
-            squeak_msg = msg_squeak(squeak=squeak)
-            self.peers_access.send_msg(peer, squeak_msg)
+        invs = [CInv(type=1, hash=squeak.GetHash())
+                for squeak in squeaks]
+        inv_msg = msg_inv(inv=invs)
+        self.peers_access.send_msg(peer, inv_msg)
 
     def handle_squeak(self, msg, peer):
         # TODO: If squeak is interesting, respond with getoffer msg.
         squeak = msg.squeak
-        logger.info('Received squeak {} from peer {}'.format(squeak, peer))
         self.squeaks_access.add_squeak(squeak)
 
     def handle_getoffer(self, msg, peer):
