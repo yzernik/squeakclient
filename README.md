@@ -34,6 +34,11 @@ git submodule update --init --recursive
 Set up X windows:
 https://cntnr.io/running-guis-with-docker-on-mac-os-x-a14df6a76efc
 
+Set the DISPLAY environment variable from the previous step:
+```
+export DISPLAY=10.0.0.10:0
+```
+
 Start the client in docker-compose:
 ```
 cd docker

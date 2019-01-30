@@ -73,7 +73,6 @@ class ClientSqueakNode(object):
         self.signing_key_access.listen_key_changed(callback)
 
     def make_squeak(self, content):
-        logger.debug('Trying to make squeak with content: {}'.format(content))
         key = self.get_signing_key()
         if key is None:
             logger.error('Missing signing key.')
@@ -116,7 +115,6 @@ class ClientSqueakNode(object):
 
     def find_more_peers(self):
         peers = self.get_peers()
-        logger.info('Number of connected peers: {}'.format(len(peers)))
         if len(peers) < self.peers_access.peer_node.min_peers:
             self.peer_node.broadcast_msg(msg_getaddr())
 
