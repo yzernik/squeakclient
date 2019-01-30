@@ -31,10 +31,14 @@ First, initialize submodule
 git submodule update --init --recursive
 ```
 
-Set up X windows:
+Set up the DISPLAY.
+For Mac:
 https://cntnr.io/running-guis-with-docker-on-mac-os-x-a14df6a76efc
 
-Set the DISPLAY environment variable from the previous step:
+For Ubuntu:
+https://medium.com/@SaravSun/running-gui-applications-inside-docker-containers-83d65c0db110
+
+Set the DISPLAY environment variable with the value from the previous step:
 ```
 export DISPLAY=10.0.0.10:0
 ```
