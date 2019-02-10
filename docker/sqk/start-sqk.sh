@@ -43,7 +43,7 @@ RPCUSER=$(set_default "$RPCUSER" "devuser")
 RPCPASS=$(set_default "$RPCPASS" "devpass")
 HEADLESS=$(set_default "$HEADLESS" "false")
 DEBUG=$(set_default "$DEBUG" "debug")
-NETWORK=$(set_default "$NETWORK" "simnet")
+NETWORK=$(set_default "$NETWORK" "testnet")
 CHAIN=$(set_default "$CHAIN" "bitcoin")
 BACKEND="btcd"
 if [[ "$CHAIN" == "litecoin" ]]; then
@@ -77,7 +77,7 @@ update-ca-certificates
 export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
 exec target/squeakclient/squeakclient \
-     --network=testnet \
+     "--network"="$NETWORK" \
      "--rpcuser"="$RPCUSER" \
      "--rpcpass"="$RPCPASS" \
      "--$BACKEND.rpchost"="blockchain" \

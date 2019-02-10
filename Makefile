@@ -9,6 +9,9 @@ test:
 	tox
 	tox -e codechecks
 
+itest:
+	echo "run itest here"
+
 coverage:
 	tox -e coverage
 

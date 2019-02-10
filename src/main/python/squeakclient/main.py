@@ -5,8 +5,9 @@ import threading
 import argparse
 import logging
 
+import squeak.params
+
 from squeak.params import SelectParams
-from squeak.params import params
 
 from squeakclient.gui.app import AppContext
 
@@ -31,8 +32,7 @@ def load_blockchain(rpc_host, rpc_user, rpc_pass) -> Blockchain:
     )
 
 
-def _start_node(network, rpc_host, rpc_user, rpc_pass):
-    SelectParams(network)
+def _start_node(rpc_host, rpc_user, rpc_pass):
     storage = load_storage()
     blockchain = load_blockchain(rpc_host, rpc_user, rpc_pass)
     node = ClientSqueakNode(storage, blockchain)
@@ -42,19 +42,23 @@ def _start_node(network, rpc_host, rpc_user, rpc_pass):
     )
     thread.daemon = True
     thread.start()
-    print('Started node')
     return node, thread
 
 
-def _start_rpc_server(node, rpc_port, rpc_user, rpc_pass):
-    rpc_server = RPCServer(node, rpc_port, rpc_user, rpc_pass)
+def _start_rpc_server(node, port, rpc_user, rpc_pass):
+    port = port or squeak.params.params.RPC_PORT
+    rpc_server = RPCServer(
+        node,
+        port,
+        rpc_user,
+        rpc_pass,
+    )
     thread = threading.Thread(
         target=rpc_server.start,
         args=(),
     )
     thread.daemon = True
     thread.start()
-    print('Started rpc server')
     return rpc_server, thread
 
 
@@ -74,7 +78,7 @@ def parse_args():
         '--rpcport',
         dest='rpcport',
         type=int,
-        default=params.RPC_PORT,
+        default=None,
         help='RPC server port number',
     )
     parser.add_argument(
@@ -149,6 +153,8 @@ def main():
     print("level: " + level, flush=True)
     logging.getLogger().setLevel(level)
 
+    print('network:', args.network, flush=True)
+    SelectParams(args.network)
     rpc_host = args.btcd_rpchost
     rpc_user = args.btcd_rpcuser
     rpc_pass = args.btcd_rpcpass
@@ -156,7 +162,7 @@ def main():
     print('rpc user:', rpc_user, flush=True)
     print('rpc pass:', rpc_pass, flush=True)
 
-    node, thread = _start_node(args.network, rpc_host, rpc_user, rpc_pass)
+    node, thread = _start_node(rpc_host, rpc_user, rpc_pass)
 
     # start rpc server
     rpc_server, rpc_server_thread = _start_rpc_server(node, args.rpcport, args.rpcuser, args.rpcpass)

@@ -15,7 +15,7 @@ class RPCServer(object):
 
     def start(self):
         app = self.get_application()
-        run_simple('localhost', self.port, app)
+        run_simple('0.0.0.0', self.port, app)
 
     def check_auth(self, username, password):
         """This function is called to check if a username /
@@ -27,13 +27,13 @@ class RPCServer(object):
         def application(environ, start_response):
             request = Request(environ)
             auth = request.authorization
-            print(auth)
             if not auth or not self.check_auth(auth.username, auth.password):
                 abort(401)
 
             # Dispatcher is dictionary {<method_name>: callable}
             dispatcher["echo"] = self.echo
             dispatcher["addpeer"] = self.addpeer
+            dispatcher["getpeers"] = self.getpeers
             dispatcher["generate_signing_key"] = self.generate_signing_key
             dispatcher["get_signing_key"] = self.get_signing_key
             dispatcher["get_address"] = self.get_address
@@ -51,6 +51,9 @@ class RPCServer(object):
 
     def addpeer(self, host):
         return str(self.node.connect_host(host))
+
+    def getpeers(self):
+        return str(self.node.get_peers())
 
     def generate_signing_key(self):
         return str(self.node.generate_signing_key())

@@ -6,6 +6,7 @@ from squeak.messages import msg_pong
 from squeak.messages import msg_inv
 from squeak.messages import msg_getdata
 from squeak.messages import msg_squeak
+from squeak.messages import msg_notfound
 from squeak.net import CInv
 
 from squeakclient.squeaknode.node.peernode import PeerMessageHandler
@@ -49,6 +50,8 @@ class ClientPeerMessageHandler(PeerMessageHandler):
             self.handle_squeak(msg, peer)
         if msg.command == b'getdata':
             self.handle_getdata(msg, peer)
+        if msg.command == b'notfound':
+            self.handle_notfound(msg, peer)
 
     def handle_ping(self, msg, peer):
         nonce = msg.nonce
@@ -85,11 +88,17 @@ class ClientPeerMessageHandler(PeerMessageHandler):
 
     def handle_getdata(self, msg, peer):
         invs = msg.inv
+        not_found = []
         for inv in invs:
             if inv.type == 1:
                 squeak = self.squeaks_access.get_squeak(inv.hash)
-                squeak_msg = msg_squeak(squeak=squeak)
-                self.peers_access.send_msg(peer, squeak_msg)
+                if squeak:
+                    squeak_msg = msg_squeak(squeak=squeak)
+                    self.peers_access.send_msg(peer, squeak_msg)
+                else:
+                    not_found.append(inv)
+        notfound_msg = msg_notfound(inv=not_found)
+        self.peers_access.send_msg(peer, notfound_msg)
 
     def handle_notfound(self, msg, peer):
         pass

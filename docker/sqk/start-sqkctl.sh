@@ -39,11 +39,14 @@ set_default() {
 }
 
 # Set default variables if needed.
+RPCHOST=$(set_default "$RPCHOST" "localhost")
 RPCUSER=$(set_default "$RPCUSER" "devuser")
 RPCPASS=$(set_default "$RPCPASS" "devpass")
-NETWORK=$(set_default "$NETWORK" "simnet")
+NETWORK=$(set_default "$NETWORK" "testnet")
 
 exec python src/main/python/squeakclient/squeaknode/cli/main.py \
+     "--network"="$NETWORK" \
+     "--host"="$RPCHOST" \
      "--rpcuser"="$RPCUSER" \
      "--rpcpass"="$RPCPASS" \
      # "--$NETWORK" \

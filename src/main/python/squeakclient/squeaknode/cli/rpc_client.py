@@ -42,6 +42,9 @@ class RPCClient(object):
     def addpeer(self, host) -> str:
         return self.make_request("addpeer", host)
 
+    def getpeers(self) -> str:
+        return self.make_request("getpeers")
+
 
 class RPCClientError(Exception):
     pass

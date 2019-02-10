@@ -4,7 +4,9 @@ import argparse
 
 from rpc_client import RPCClient
 
-from squeak.params import params
+import squeak.params
+
+from squeak.params import SelectParams
 
 
 PROMPT = 'squeaknode-cli>'
@@ -15,6 +17,14 @@ def parse_args():
         description="CLI for interacting with squeaknode.",
     )
     parser.add_argument(
+        '--network',
+        dest='network',
+        type=str,
+        default='mainnet',
+        choices=['mainnet', 'testnet', 'regtest'],
+        help='The bitcoin network to use',
+    )
+    parser.add_argument(
         '--host',
         type=str,
         default='localhost',
@@ -23,8 +33,8 @@ def parse_args():
     parser.add_argument(
         '--port',
         type=int,
-        default=params.RPC_PORT,
-        help="RPC server host.",
+        default=None,
+        help="RPC server port.",
     )
     parser.add_argument(
         '--rpcuser',
@@ -49,6 +59,7 @@ def parse_cmd(cmd):
 
     EchoCommand.add_parser(subparsers)
     AddPeerCommand.add_parser(subparsers)
+    GetPeersCommand.add_parser(subparsers)
     GenerateSigningKeyCommand.add_parser(subparsers)
     GetSigningKeyCommand.add_parser(subparsers)
 
@@ -58,7 +69,7 @@ def parse_cmd(cmd):
 def make_rpc_client(args):
     return RPCClient(
         host=args.host,
-        port=args.port,
+        port=args.port or squeak.params.params.RPC_PORT,
         rpc_user=args.rpcuser,
         rpc_password=args.rpcpass,
     )
@@ -84,6 +95,7 @@ def cli(rpc_client):
 
 def main():
     args = parse_args()
+    SelectParams(args.network)
     rpc_client = make_rpc_client(args)
     cli(rpc_client)
 
@@ -151,6 +163,26 @@ class AddPeerCommand(Command):
     @classmethod
     def run(self, args, rpc_client):
         print(rpc_client.addpeer(args.host))
+
+
+class GetPeersCommand(Command):
+
+    @classmethod
+    def setup_subparser(cls, subparsers):
+        subparser = subparsers.add_parser(
+            "getpeers",
+            description="Get connected peers.",
+            add_help=False
+        )
+        subparser.add_argument(
+            "-h", "--help", action="help",
+            help='',
+        )
+        return subparser
+
+    @classmethod
+    def run(self, args, rpc_client):
+        print(rpc_client.getpeers())
 
 
 class GenerateSigningKeyCommand(Command):

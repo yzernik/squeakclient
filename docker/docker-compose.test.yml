@@ -39,3 +39,17 @@ services:
       links:
           - "btcd:blockchain"
           - "lnd_carol:lnd"
+
+    test:
+      image: test
+      build:
+        context: ../
+        dockerfile: docker/test/Dockerfile
+      links:
+        - "lnd_alice:lnd_alice"
+        - "lnd_bob:lnd_bob"
+        - "lnd_carol:lnd_carol"
+        - "sqk_alice:sqk_alice"
+        - "sqk_bob:sqk_bob"
+        - "sqk_carol:sqk_carol"
+      entrypoint: ["./test.sh"]
