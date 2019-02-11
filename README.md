@@ -50,22 +50,9 @@ docker-compose build
 docker-compose up sqk_btc
 ```
 
-or try using the ctl:
-```
-docker-compose run -d --name alice sqk_btc
-docker-compose run -d --name bob sqk_btc
-docker exec -i -t alice bash
-# ./start-sqkctl.sh
-squeaknode-cli> echo foooo
-squeaknode-cli> addpeer bob
-```
-
-
 Testing
 =======
 
 ```
-docker-compose -f docker-compose.yml -f docker-compose.test.yml build
-docker-compose -f docker-compose.yml -f docker-compose.test.yml up
+make itest
 ```
-then in `Peers` tab, add peer connection to other peer.
