@@ -10,7 +10,7 @@ test:
 	tox -e codechecks
 
 itest:
-	echo "run itest here"
+	./src/itests/run_itest.sh
 
 coverage:
 	tox -e coverage
