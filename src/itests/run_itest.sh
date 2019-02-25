@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export HEADLESS = "true"
+export HEADLESS="true"
 
 cd docker
 docker-compose -f docker-compose.yml -f docker-compose.test.yml down
@@ -12,6 +12,9 @@ wait_output=$(docker wait docker_test_1)
 docker-compose -f docker-compose.yml -f docker-compose.test.yml logs
 
 retVal=$wait_output
+echo "retVal:"
+echo "$retVal"
+
 if [ $retVal -ne 0 ]; then
     echo "itest failed"
 else
