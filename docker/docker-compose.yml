@@ -70,7 +70,7 @@ services:
     lnd:
         image: lnd
         build:
-          context: ../submodules/lnd/
+          context: ../
           dockerfile: docker/lnd/Dockerfile
         environment:
           - RPCUSER
