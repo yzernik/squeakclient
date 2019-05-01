@@ -1,4 +1,4 @@
-LND := submodules/lnd/
+LND := submodules/lnd/%
 
 all: test
 
