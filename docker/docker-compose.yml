@@ -96,9 +96,6 @@ services:
           - HEADLESS
         volumes:
           - shared:/rpc
-          - /tmp/.X11-unix:/tmp/.X11-unix
-        environment:
-          - DISPLAY=${DISPLAY}
         entrypoint: ["./start-sqk.sh"]
 
 volumes:

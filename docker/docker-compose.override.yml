@@ -19,6 +19,10 @@ services:
       links:
           - "btcd:blockchain"
           - "lnd_btc:lnd"
+      volumes:
+          - /tmp/.X11-unix:/tmp/.X11-unix
+      environment:
+          - DISPLAY=${DISPLAY}
 
     sqk_ltc:
       extends: sqk
@@ -26,3 +30,7 @@ services:
       links:
           - "ltcd:blockchain"
           - "lnd_ltc:lnd"
+      volumes:
+          - /tmp/.X11-unix:/tmp/.X11-unix
+      environment:
+          - DISPLAY=${DISPLAY}
