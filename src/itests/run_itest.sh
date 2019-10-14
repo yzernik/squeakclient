@@ -3,13 +3,13 @@
 export HEADLESS="true"
 
 cd docker
-docker-compose -f docker-compose.yml -f docker-compose.test.yml down
-docker-compose -f docker-compose.yml -f docker-compose.test.yml build
-docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
+docker-compose -f docker-compose.test.yml down --volumes
+docker-compose -f docker-compose.test.yml build
+docker-compose -f docker-compose.test.yml up -d --force-recreate
 
 wait_output=$(docker wait docker_test_1)
 
-docker-compose -f docker-compose.yml -f docker-compose.test.yml logs
+docker-compose -f docker-compose.yml logs
 
 retVal=$wait_output
 echo "retVal:"

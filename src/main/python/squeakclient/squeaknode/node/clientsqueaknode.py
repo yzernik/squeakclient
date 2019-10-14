@@ -14,6 +14,7 @@ from squeakclient.squeaknode.core.squeak_maker import SqueakMaker
 from squeakclient.squeaknode.core.stores.storage import Storage
 from squeakclient.squeaknode.node.handshakenode import HandshakeNode
 from squeakclient.squeaknode.node.squeaknode import ClientPeerMessageHandler
+from squeakclient.squeaknode.core.lightning_client import LightningClient
 
 
 UPDATE_THREAD_SLEEP_TIME = 10
@@ -26,9 +27,10 @@ class ClientSqueakNode(object):
     """Network node that handles client commands.
     """
 
-    def __init__(self, storage: Storage, blockchain: Blockchain) -> None:
+    def __init__(self, storage: Storage, blockchain: Blockchain, lightning_client: LightningClient) -> None:
         self.storage = storage
         self.blockchain = blockchain
+        self.lightning_client = lightning_client
         self.peer_node = HandshakeNode()
         self.peers_access = PeersAccess(self.peer_node)
         self.signing_key_access = SigningKeyAccess(self.storage)
@@ -117,6 +119,9 @@ class ClientSqueakNode(object):
         peers = self.get_peers()
         if len(peers) < self.peers_access.peer_node.min_peers:
             self.peer_node.broadcast_msg(msg_getaddr())
+
+    def get_wallet_balance(self):
+        return self.lightning_client.get_wallet_balance()
 
 
 class ClientNodeError(Exception):

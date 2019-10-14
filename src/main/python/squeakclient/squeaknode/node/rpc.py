@@ -1,8 +1,13 @@
+import logging
+
 from werkzeug.exceptions import abort
 from werkzeug.wrappers import Request, Response
 from werkzeug.serving import run_simple
 
 from jsonrpc import JSONRPCResponseManager, dispatcher
+
+
+logger = logging.getLogger(__name__)
 
 
 class RPCServer(object):
@@ -26,6 +31,7 @@ class RPCServer(object):
     def get_application(self):
         def application(environ, start_response):
             request = Request(environ)
+            logger.info('Got request: {}'.format(request.data))
             auth = request.authorization
             if not auth or not self.check_auth(auth.username, auth.password):
                 abort(401)
@@ -38,6 +44,7 @@ class RPCServer(object):
             dispatcher["get_signing_key"] = self.get_signing_key
             dispatcher["get_address"] = self.get_address
             dispatcher["make_squeak"] = self.make_squeak
+            dispatcher["getwalletbalance"] = self.getwalletbalance
 
             response = JSONRPCResponseManager.handle(
                 request.data, dispatcher)
@@ -50,9 +57,11 @@ class RPCServer(object):
         return s
 
     def addpeer(self, host):
+        logger.info('handling addpeer request.')
         return str(self.node.connect_host(host))
 
     def getpeers(self):
+        logger.info('handling getpeers request.')
         return str(self.node.get_peers())
 
     def generate_signing_key(self):
@@ -66,3 +75,9 @@ class RPCServer(object):
 
     def make_squeak(self, content):
         return str(self.node.make_squeak(content))
+
+    def getwalletbalance(self):
+        logger.info('handling get_wallet_balance request.')
+        ret = str(self.node.get_wallet_balance())
+        logger.info('got get_wallet_balance response: ' + ret)
+        return ret

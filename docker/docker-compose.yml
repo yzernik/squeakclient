@@ -36,39 +36,9 @@ services:
             - "btcd:rpcserver"
         entrypoint: ["./start-btcctl.sh"]
 
-
-    # ltc is an image of litecoin node which used as base image for ltcd and
-    # ltcctl. The environment variables default values determined on stage of
-    # container start within starting script.
-    ltc:
-      image: ltcd
-      build:
-        context: ../submodules/lnd/docker/ltcd/
-      volumes:
-            - shared:/rpc
-            - litecoin:/data
-      environment:
-        - RPCUSER
-        - RPCPASS
-        - NETWORK
-
-    ltcd:
-        extends: ltc
-        container_name: ltcd
-        environment:
-          - DEBUG
-          - MINING_ADDRESS
-        entrypoint: ["./start-ltcd.sh"]
-
-    ltcctl:
-        extends: ltc
-        container_name: ltcctl
-        links:
-            - "ltcd:rpcserver"
-        entrypoint: ["./start-ltcctl.sh"]
-
     lnd:
         image: lnd
+        container_name: lnd
         build:
           context: ../
           dockerfile: docker/lnd/Dockerfile
@@ -78,12 +48,20 @@ services:
           - NETWORK
           - CHAIN
           - DEBUG
+          - RPC_LISTEN="0.0.0.0:10011"
+        ports:
+          - 9735:9735
+          - 10009:10009
         volumes:
-            - shared:/rpc
+          - shared:/rpc
+          - lnd_dir:/root/.lnd
+        links:
+          - "btcd:blockchain"
         entrypoint: ["./start-lnd.sh"]
 
     sqk:
         image: sqk
+        container_name: sqk
         build:
           context: ../
           dockerfile: docker/sqk/Dockerfile
@@ -96,6 +74,10 @@ services:
           - HEADLESS
         volumes:
           - shared:/rpc
+          - lnd_dir:/root/.lnd
+        links:
+          - "btcd:blockchain"
+          - "lnd:lnd"
         entrypoint: ["./start-sqk.sh"]
 
 volumes:
@@ -109,7 +91,6 @@ volumes:
   bitcoin:
     driver: local
 
-  # litecoin volume is needed for maintaining blockchain persistence
-  # during ltcd container recreation.
-  litecoin:
+  # lnd_dir volume is needed for sharing tht tls certificate
+  lnd_dir:
     driver: local

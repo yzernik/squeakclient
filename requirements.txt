@@ -1,5 +1,6 @@
 squeaklib==0.1.3
 argparse
+googleapis-common-protos
 grpcio
 grpcio-tools
 json-rpc==1.11.1

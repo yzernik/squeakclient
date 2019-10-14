@@ -41,48 +41,28 @@ set_default() {
 # Set default variables if needed.
 RPCUSER=$(set_default "$RPCUSER" "devuser")
 RPCPASS=$(set_default "$RPCPASS" "devpass")
-HEADLESS=$(set_default "$HEADLESS" "true")
 DEBUG=$(set_default "$DEBUG" "debug")
-NETWORK=$(set_default "$NETWORK" "testnet")
+NETWORK=$(set_default "$NETWORK" "simnet")
 CHAIN=$(set_default "$CHAIN" "bitcoin")
 BACKEND="btcd"
+RPC_LISTEN=$(set_default "$RPC_LISTEN" "localhost:10009")
 if [[ "$CHAIN" == "litecoin" ]]; then
     BACKEND="ltcd"
 fi
-if [ "$HEADLESS" = "true" ]; then
-    HEADLESS_OPT="--headless"
-else
-    HEADLESS_OPT="--no-headless"
-fi
-HEADLESS_OPT="--headless"
 
-# exec sqk \
-#     --logdir="/data" \
-#     "--$CHAIN.active" \
-#     "--$CHAIN.$NETWORK" \
-#     "--$CHAIN.node"="btcd" \
-#     "--$BACKEND.rpccert"="/rpc/rpc.cert" \
-#     "--$BACKEND.rpchost"="blockchain" \
-#     "--$BACKEND.rpcuser"="$RPCUSER" \
-#     "--$BACKEND.rpcpass"="$RPCPASS" \
-#     --debuglevel="$DEBUG" \
-#     "$@"
-
-# Add btcd's RPC TLS certificate to system Certificate Authority list.
-cp /rpc/rpc.cert /usr/share/ca-certificates/btcd.crt
-echo btcd.crt >> /etc/ca-certificates.conf
-update-ca-certificates
-
-# To make python requests use the system ca-certificates bundle, it
-# needs to be told to use it over its own embedded bundle
-export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-
-exec target/squeakclient/squeakclient \
-     "--network"="$NETWORK" \
-     "--rpcuser"="$RPCUSER" \
-     "--rpcpass"="$RPCPASS" \
-     "--$BACKEND.rpchost"="blockchain" \
-     "--$BACKEND.rpcuser"="$RPCUSER" \
-     "--$BACKEND.rpcpass"="$RPCPASS" \
-     "$HEADLESS_OPT" \
-     --log-level="$DEBUG" \
+exec lnd \
+    --noseedbackup \
+    --logdir="/data" \
+    "--$CHAIN.active" \
+    "--$CHAIN.$NETWORK" \
+    "--$CHAIN.node"="btcd" \
+    "--$BACKEND.rpccert"="/rpc/rpc.cert" \
+    "--$BACKEND.rpchost"="blockchain" \
+    "--$BACKEND.rpcuser"="$RPCUSER" \
+    "--$BACKEND.rpcpass"="$RPCPASS" \
+    --restlisten=0.0.0.0:8080 \
+    --rpclisten=127.0.0.1:10008 \
+    --rpclisten=0.0.0.0:10009 \
+    --debuglevel="$DEBUG" \
+    --tlsextradomain=lnd \
+    "$@"

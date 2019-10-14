@@ -45,6 +45,9 @@ class RPCClient(object):
     def getpeers(self) -> str:
         return self.make_request("getpeers")
 
+    def getwalletbalance(self) -> str:
+        return self.make_request("getwalletbalance")
+
 
 class RPCClientError(Exception):
     pass

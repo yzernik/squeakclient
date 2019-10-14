@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QWidget
 from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QTabWidget
 
+from squeakclient.gui.channels import ChannelsWidget
 from squeakclient.gui.following import FollowingWidget
 from squeakclient.gui.peers import PeersWidget
 from squeakclient.gui.keys import SingingKeyWidget
@@ -50,9 +51,7 @@ class MainWindow(QWidget):
         self.tabs.addTab(funds_tab, "Funds")
 
         # Add channels tab
-        channels_tab = QWidget()
-        channels_tab.layout = QVBoxLayout()
-        channels_tab.setLayout(channels_tab.layout)
+        channels_tab = ChannelsWidget(self.node)
         self.tabs.addTab(channels_tab, "Channels")
 
         # Add tabs to widget

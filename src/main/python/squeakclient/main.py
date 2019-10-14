@@ -12,10 +12,12 @@ from squeak.params import SelectParams
 from squeakclient.gui.app import AppContext
 
 from squeakclient.squeaknode.core.blockchain import Blockchain
+from squeakclient.squeaknode.core.lightning_client import LightningClient
 from squeakclient.squeaknode.core.stores.storage import Storage
 from squeakclient.squeaknode.node.clientsqueaknode import ClientSqueakNode
 from squeakclient.squeaknode.node.stores.memory.storage import MemoryStorage
 from squeakclient.squeaknode.node.rpc_blockchain import RPCBlockchain
+from squeakclient.squeaknode.node.rpc_lightning_client import RPCLightningClient
 from squeakclient.squeaknode.node.rpc import RPCServer
 
 
@@ -32,10 +34,15 @@ def load_blockchain(rpc_host, rpc_user, rpc_pass) -> Blockchain:
     )
 
 
+def load_lightning_client() -> LightningClient:
+    return RPCLightningClient()
+
+
 def _start_node(rpc_host, rpc_user, rpc_pass):
     storage = load_storage()
     blockchain = load_blockchain(rpc_host, rpc_user, rpc_pass)
-    node = ClientSqueakNode(storage, blockchain)
+    lightning_client = load_lightning_client()
+    node = ClientSqueakNode(storage, blockchain, lightning_client)
     thread = threading.Thread(
         target=node.start,
         args=(),

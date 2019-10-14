@@ -1,65 +1,81 @@
 version: '2'
 services:
 
-    lnd_alice:
-      extends: lnd
-      container_name: lnd_alice
-      links:
-          - "btcd:blockchain"
-
-    lnd_bob:
-      extends: lnd
-      container_name: lnd_bob
-      links:
-          - "btcd:blockchain"
-
-    lnd_carol:
-      extends: lnd
-      container_name: lnd_carol
-      links:
-          - "btcd:blockchain"
-
-    sqk_alice:
-      extends: sqk
-      container_name: sqk_alice
+    # btc is an image of bitcoin node which used as base image for btcd and
+    # btccli. The environment variables default values determined on stage of
+    # container start within starting script.
+    btc:
+      image: btcd
+      build:
+        context: ../submodules/lnd/docker/btcd/
+      volumes:
+            - shared:/rpc
+            - bitcoin:/data
       environment:
         - RPCUSER
         - RPCPASS
         - NETWORK
-        - CHAIN
-        - DEBUG
-        - HEADLESS
-      links:
-          - "btcd:blockchain"
-          - "lnd_alice:lnd"
 
-    sqk_bob:
-      extends: sqk
-      container_name: sqk_bob
-      environment:
-        - RPCUSER
-        - RPCPASS
-        - NETWORK
-        - CHAIN
-        - DEBUG
-        - HEADLESS
-      links:
-          - "btcd:blockchain"
-          - "lnd_bob:lnd"
+    btcd:
+        extends: btc
+        container_name: btcd
+        environment:
+          - DEBUG
+          - MINING_ADDRESS
+        ports:
+          - 8334:8334
+          - 18334:18334
+          - 18556:18556
+          - 28902:28902
+        entrypoint: ["./start-btcd.sh"]
 
-    sqk_carol:
-      extends: sqk
-      container_name: sqk_carol
-      environment:
-        - RPCUSER
-        - RPCPASS
-        - NETWORK
-        - CHAIN
-        - DEBUG
-        - HEADLESS
-      links:
+    btcctl:
+        extends: btc
+        container_name: btcctl
+        links:
+            - "btcd:rpcserver"
+        entrypoint: ["./start-btcctl.sh"]
+
+    lnd:
+        image: lnd
+        container_name: lnd
+        build:
+          context: ../
+          dockerfile: docker/lnd/Dockerfile
+        environment:
+          - RPCUSER
+          - RPCPASS
+          - NETWORK
+          - CHAIN
+          - DEBUG
+          - RPC_LISTEN="0.0.0.0:10009"
+        volumes:
+          - shared:/rpc
+          - lnd_dir:/root/.lnd
+        links:
           - "btcd:blockchain"
-          - "lnd_carol:lnd"
+        entrypoint: ["./start-lnd.sh"]
+
+    sqk:
+        image: sqk
+        container_name: sqk
+        build:
+          context: ../
+          dockerfile: docker/sqk/Dockerfile
+        environment:
+          - RPCUSER
+          - RPCPASS
+          - NETWORK
+          - CHAIN
+          - DEBUG
+          - HEADLESS
+        volumes:
+          - shared:/rpc
+          - lnd_dir:/root/.lnd
+        links:
+          - "btcd:blockchain"
+          - "lnd:lnd"
+        entrypoint: ["./start-sqk.sh"]
 
     test:
       image: test
@@ -67,10 +83,21 @@ services:
         context: ../
         dockerfile: docker/test/Dockerfile
       links:
-        - "lnd_alice:lnd_alice"
-        - "lnd_bob:lnd_bob"
-        - "lnd_carol:lnd_carol"
-        - "sqk_alice:sqk_alice"
-        - "sqk_bob:sqk_bob"
-        - "sqk_carol:sqk_carol"
+        - "lnd:lnd"
+        - "sqk:sqk"
       entrypoint: ["./test.sh"]
+
+volumes:
+  # shared volume is need to store the btcd rpc certificates and use it within
+  # btcctl and lnd containers.
+  shared:
+    driver: local
+
+  # bitcoin volume is needed for maintaining blockchain persistence
+  # during btcd container recreation.
+  bitcoin:
+    driver: local
+
+  # lnd_dir volume is needed for sharing tht tls certificate
+  lnd_dir:
+    driver: local

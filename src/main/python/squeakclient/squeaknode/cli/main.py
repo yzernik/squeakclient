@@ -62,6 +62,7 @@ def parse_cmd(cmd):
     GetPeersCommand.add_parser(subparsers)
     GenerateSigningKeyCommand.add_parser(subparsers)
     GetSigningKeyCommand.add_parser(subparsers)
+    GetWalletBalanceCommand.add_parser(subparsers)
 
     return parser.parse_args(cmd.split())
 
@@ -223,6 +224,26 @@ class GetSigningKeyCommand(Command):
     @classmethod
     def run(self, args):
         print('Running the get signing key command.')
+
+
+class GetWalletBalanceCommand(Command):
+
+    @classmethod
+    def setup_subparser(cls, subparsers):
+        subparser = subparsers.add_parser(
+            "getwalletbalance",
+            description="Get the wallet balance.",
+            add_help=False
+        )
+        subparser.add_argument(
+            "-h", "--help", action="help",
+            help='',
+        )
+        return subparser
+
+    @classmethod
+    def run(self, args, rpc_client):
+        print(rpc_client.getwalletbalance())
 
 
 if __name__ == "__main__":

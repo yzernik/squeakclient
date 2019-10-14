@@ -32,5 +32,5 @@ RUN apk add --no-cache \
     bash
 
 # Copy the entrypoint script.
-COPY "submodules/lnd/docker/lnd/start-lnd.sh" .
+COPY "docker/lnd/start-lnd.sh" .
 RUN chmod +x start-lnd.sh
