@@ -2,8 +2,12 @@ FROM golang:1.12-alpine as builder
 
 MAINTAINER Olaoluwa Osuntokun <lightning.engineering>
 
+RUN apk update && \
+    apk upgrade && \
+    apk add git
+
 # Copy in the local repository to build from.
-COPY . /code
+RUN git clone https://github.com/lightningnetwork/lnd.git
 
 # Force Go to use the cgo based DNS resolver. This is required to ensure DNS
 # queries required to connect to linked containers succeed.
@@ -13,7 +17,7 @@ ENV GODEBUG netdns=cgo
 RUN apk add --no-cache --update alpine-sdk \
     git \
     make \
-&&  cd /code/submodules/lnd \
+&&  cd lnd \
 &&  make \
 &&  make install
 

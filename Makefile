@@ -1,5 +1,3 @@
-LND := submodules/lnd/%
-
 all: test
 
 clean:
@@ -11,10 +9,7 @@ test:
 	tox
 	tox -e codechecks
 
-$(LND):
-	git submodule update --init
-
-itest: $(LND)
+itest:
 	./src/itests/run_itest.sh
 
 coverage:

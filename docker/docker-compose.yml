@@ -1,41 +1,6 @@
 version: '2'
 services:
 
-    # btc is an image of bitcoin node which used as base image for btcd and
-    # btccli. The environment variables default values determined on stage of
-    # container start within starting script.
-    btc:
-      image: btcd
-      build:
-        context: ../submodules/lnd/docker/btcd/
-      volumes:
-            - shared:/rpc
-            - bitcoin:/data
-      environment:
-        - RPCUSER
-        - RPCPASS
-        - NETWORK
-
-    btcd:
-        extends: btc
-        container_name: btcd
-        environment:
-          - DEBUG
-          - MINING_ADDRESS
-        ports:
-          - 8334:8334
-          - 18334:18334
-          - 18556:18556
-          - 28902:28902
-        entrypoint: ["./start-btcd.sh"]
-
-    btcctl:
-        extends: btc
-        container_name: btcctl
-        links:
-            - "btcd:rpcserver"
-        entrypoint: ["./start-btcctl.sh"]
-
     lnd:
         image: lnd
         container_name: lnd
@@ -48,15 +13,10 @@ services:
           - NETWORK
           - CHAIN
           - DEBUG
-          - RPC_LISTEN="0.0.0.0:10011"
-        ports:
-          - 9735:9735
-          - 10009:10009
+          - RPC_LISTEN="0.0.0.0:10009"
         volumes:
           - shared:/rpc
           - lnd_dir:/root/.lnd
-        links:
-          - "btcd:blockchain"
         entrypoint: ["./start-lnd.sh"]
 
     sqk:
@@ -76,7 +36,6 @@ services:
           - shared:/rpc
           - lnd_dir:/root/.lnd
         links:
-          - "btcd:blockchain"
           - "lnd:lnd"
         entrypoint: ["./start-sqk.sh"]
 
