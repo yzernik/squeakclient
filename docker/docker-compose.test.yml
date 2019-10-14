@@ -56,9 +56,51 @@ services:
           - "btcd:blockchain"
         entrypoint: ["./start-lnd.sh"]
 
-    sqk:
+    sqk_alice:
         image: sqk
-        container_name: sqk
+        container_name: sqk_alice
+        build:
+          context: ../
+          dockerfile: docker/sqk/Dockerfile
+        environment:
+          - RPCUSER
+          - RPCPASS
+          - NETWORK
+          - CHAIN
+          - DEBUG
+          - HEADLESS
+        volumes:
+          - shared:/rpc
+          - lnd_dir:/root/.lnd
+        links:
+          - "btcd:blockchain"
+          - "lnd:lnd"
+        entrypoint: ["./start-sqk.sh"]
+
+    sqk_bob:
+        image: sqk
+        container_name: sqk_bob
+        build:
+          context: ../
+          dockerfile: docker/sqk/Dockerfile
+        environment:
+          - RPCUSER
+          - RPCPASS
+          - NETWORK
+          - CHAIN
+          - DEBUG
+          - HEADLESS
+        volumes:
+          - shared:/rpc
+          - lnd_dir:/root/.lnd
+        links:
+          - "btcd:blockchain"
+          - "lnd:lnd"
+        entrypoint: ["./start-sqk.sh"]
+
+    sqk_carol:
+        image: sqk
+        container_name: sqk_carol
         build:
           context: ../
           dockerfile: docker/sqk/Dockerfile
@@ -84,7 +126,9 @@ services:
         dockerfile: docker/test/Dockerfile
       links:
         - "lnd:lnd"
-        - "sqk:sqk"
+        - "sqk_alice:sqk_alice"
+        - "sqk_bob:sqk_bob"
+        - "sqk_carol:sqk_carol"
       entrypoint: ["./test.sh"]
 
 volumes:
