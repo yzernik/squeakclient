@@ -22,6 +22,7 @@ RUN cp rpc.proto /app/squeakclient
 WORKDIR /app
 
 RUN python3 -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. squeakclient/rpc.proto
+RUN python3 -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. squeakclient/squeaknode/rpc/route_guide.proto
 RUN python3 setup.py install
 
 # Copy the entrypoint script.

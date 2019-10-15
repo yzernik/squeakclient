@@ -16,6 +16,7 @@ from squeakclient.squeaknode.node.stores.memory.storage import MemoryStorage
 from squeakclient.squeaknode.node.rpc_blockchain import RPCBlockchain
 from squeakclient.squeaknode.node.rpc_lightning_client import RPCLightningClient
 from squeakclient.squeaknode.node.rpc import RPCServer
+from squeakclient.squeaknode.rpc.route_guide_server import RouteGuideServicer
 
 
 def load_storage() -> Storage:
@@ -59,6 +60,17 @@ def _start_rpc_server(node, port, rpc_user, rpc_pass):
     thread.daemon = True
     thread.start()
     return rpc_server, thread
+
+
+def _start_route_guide_rpc_server():
+    server = RouteGuideServicer()
+    thread = threading.Thread(
+        target=server.serve,
+        args=(),
+    )
+    thread.daemon = True
+    thread.start()
+    return server, thread
 
 
 def parse_args():
@@ -165,6 +177,7 @@ def main():
 
     # start rpc server
     rpc_server, rpc_server_thread = _start_rpc_server(node, args.rpcport, args.rpcuser, args.rpcpass)
+    route_guide_server, route_guide_server_thread = _start_route_guide_rpc_server()
 
     while True:
         time.sleep(10)

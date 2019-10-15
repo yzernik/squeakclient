@@ -87,6 +87,14 @@ services:
         - "sqk_carol:sqk_carol"
       entrypoint: ["./test.sh"]
 
+    frontend:
+      container_name: frontend
+      build:
+        context: ../
+        dockerfile: docker/frontend/Dockerfile
+      ports:
+        - 8080:80
+
 volumes:
   # lnd_dir volume is needed for sharing tht tls certificate
   lnd_dir:
