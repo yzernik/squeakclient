@@ -11,13 +11,11 @@ setup(
     author='Jonathan Zernik',
     description='Squeak client',
     long_description=open('README.md').read(),
-    long_description_content_type='text/markdown',
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    packages=find_packages('src/main/python'),
-    package_dir={'': 'src/main/python'},
+    packages=find_packages(),
     keywords=[
         'squeak',
     ],
@@ -26,4 +24,11 @@ setup(
         "grpcio",
         "grpcio-tools",
     ],
+    # other arguments here...
+    entry_points={
+        'console_scripts': [
+            'runsqueak = squeakclient.main:main',
+            'runsqueakctl = squeakclient.squeaknode.cli.main:main',
+        ],
+    },
 )

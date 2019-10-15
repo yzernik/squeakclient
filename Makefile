@@ -10,7 +10,7 @@ test:
 	tox -e codechecks
 
 itest:
-	./src/itests/run_itest.sh
+	./itests/run_itest.sh
 
 coverage:
 	tox -e coverage

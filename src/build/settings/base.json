@@ -1,6 +1,0 @@
-{
-    "app_name": "squeakclient",
-    "main_module": "src/main/python/squeakclient/main.py",
-    "author": "Jonathan Zernik",
-    "version": "0.0.1"
-}

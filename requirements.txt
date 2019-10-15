@@ -5,7 +5,4 @@ grpcio
 grpcio-tools
 json-rpc==1.11.1
 requests
-fbs==0.4.1
-PyQt5==5.9.2
-PyInstaller==3.3.1
 werkzeug

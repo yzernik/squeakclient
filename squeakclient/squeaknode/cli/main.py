@@ -2,7 +2,7 @@ import sys
 
 import argparse
 
-from rpc_client import RPCClient
+from squeakclient.squeaknode.cli.rpc_client import RPCClient
 
 import squeak.params
 

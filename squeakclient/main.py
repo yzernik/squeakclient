@@ -1,4 +1,3 @@
-import sys
 import time
 import threading
 
@@ -8,8 +7,6 @@ import logging
 import squeak.params
 
 from squeak.params import SelectParams
-
-from squeakclient.gui.app import AppContext
 
 from squeakclient.squeaknode.core.blockchain import Blockchain
 from squeakclient.squeaknode.core.lightning_client import LightningClient
@@ -26,12 +23,7 @@ def load_storage() -> Storage:
 
 
 def load_blockchain(rpc_host, rpc_user, rpc_pass) -> Blockchain:
-    return RPCBlockchain(
-        host=rpc_host,
-        port=18556,
-        rpc_user=rpc_user,
-        rpc_password=rpc_pass,
-    )
+    return None
 
 
 def load_lightning_client() -> LightningClient:
@@ -174,13 +166,8 @@ def main():
     # start rpc server
     rpc_server, rpc_server_thread = _start_rpc_server(node, args.rpcport, args.rpcuser, args.rpcpass)
 
-    if not args.headless:
-        appctxt = AppContext(node)
-        exit_code = appctxt.run()
-        sys.exit(exit_code)
-    else:
-        while True:
-            time.sleep(10)
+    while True:
+        time.sleep(10)
 
 
 if __name__ == '__main__':

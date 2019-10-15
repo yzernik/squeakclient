@@ -8,8 +8,8 @@ import os
 
 from squeakclient.squeaknode.core.lightning_client import LightningClient
 
-import rpc_pb2 as ln
-import rpc_pb2_grpc as lnrpc
+import squeakclient.rpc_pb2 as ln
+import squeakclient.rpc_pb2_grpc as lnrpc
 
 import codecs
 

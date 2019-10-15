@@ -44,7 +44,7 @@ RPCUSER=$(set_default "$RPCUSER" "devuser")
 RPCPASS=$(set_default "$RPCPASS" "devpass")
 NETWORK=$(set_default "$NETWORK" "testnet")
 
-exec python src/main/python/squeakclient/squeaknode/cli/main.py \
+exec runsqueakctl \
      "--network"="$NETWORK" \
      "--host"="$RPCHOST" \
      "--rpcuser"="$RPCUSER" \
