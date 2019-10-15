@@ -15,22 +15,17 @@ COPY requirements.txt /
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-
-COPY . /app
-
-WORKDIR /app
-
 # Install the gRPC files for lnd.
 RUN git clone https://github.com/googleapis/googleapis.git
 RUN curl -o rpc.proto -s https://raw.githubusercontent.com/lightningnetwork/lnd/master/lnrpc/rpc.proto
-RUN mv rpc.proto squeakclient/
-RUN ls .
-RUN ls squeakclient
-RUN python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. squeakclient/rpc.proto
-# RUN cp rpc_pb2.py /app
-# RUN cp rpc_pb2_grpc.py /app
-# RUN touch __init__.py
 
+COPY . /app
+RUN cp -r googleapis /app
+RUN cp rpc.proto /app/squeakclient
+
+WORKDIR /app
+
+RUN python -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. squeakclient/rpc.proto
 RUN python setup.py install
 
 # Copy the entrypoint script.
