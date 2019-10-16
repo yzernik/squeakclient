@@ -35,9 +35,9 @@ services:
             - "btcd:rpcserver"
         entrypoint: ["./start-btcctl.sh"]
 
-    lnd:
+    lnd_alice:
         image: lnd
-        container_name: lnd
+        container_name: lnd_alice
         build:
           context: ../
           dockerfile: docker/lnd/Dockerfile
@@ -50,7 +50,47 @@ services:
           - RPC_LISTEN="0.0.0.0:10009"
         volumes:
           - shared:/rpc
-          - lnd_dir:/root/.lnd
+          - lnd_dir_alice:/root/.lnd
+        links:
+          - "btcd:blockchain"
+        entrypoint: ["./start-lnd.sh"]
+
+    lnd_bob:
+        image: lnd
+        container_name: lnd_bob
+        build:
+          context: ../
+          dockerfile: docker/lnd/Dockerfile
+        environment:
+          - RPCUSER
+          - RPCPASS
+          - NETWORK
+          - CHAIN
+          - DEBUG
+          - RPC_LISTEN="0.0.0.0:10009"
+        volumes:
+          - shared:/rpc
+          - lnd_dir_bob:/root/.lnd
+        links:
+          - "btcd:blockchain"
+        entrypoint: ["./start-lnd.sh"]
+
+    lnd_carol:
+        image: lnd
+        container_name: lnd_carol
+        build:
+          context: ../
+          dockerfile: docker/lnd/Dockerfile
+        environment:
+          - RPCUSER
+          - RPCPASS
+          - NETWORK
+          - CHAIN
+          - DEBUG
+          - RPC_LISTEN="0.0.0.0:10009"
+        volumes:
+          - shared:/rpc
+          - lnd_dir_carol:/root/.lnd
         links:
           - "btcd:blockchain"
         entrypoint: ["./start-lnd.sh"]
@@ -70,10 +110,10 @@ services:
           - HEADLESS
         volumes:
           - shared:/rpc
-          - lnd_dir:/root/.lnd
+          - lnd_dir_alice:/root/.lnd
         links:
           - "btcd:blockchain"
-          - "lnd:lnd"
+          - "lnd_alice:lnd"
         entrypoint: ["./start-sqk.sh"]
 
     sqk_bob:
@@ -91,10 +131,10 @@ services:
           - HEADLESS
         volumes:
           - shared:/rpc
-          - lnd_dir:/root/.lnd
+          - lnd_dir_bob:/root/.lnd
         links:
           - "btcd:blockchain"
-          - "lnd:lnd"
+          - "lnd_bob:lnd"
         entrypoint: ["./start-sqk.sh"]
 
     sqk_carol:
@@ -112,10 +152,10 @@ services:
           - HEADLESS
         volumes:
           - shared:/rpc
-          - lnd_dir:/root/.lnd
+          - lnd_dir_carol:/root/.lnd
         links:
           - "btcd:blockchain"
-          - "lnd:lnd"
+          - "lnd_carol:lnd"
         entrypoint: ["./start-sqk.sh"]
 
     test:
@@ -125,7 +165,6 @@ services:
         dockerfile: docker/test/Dockerfile
       links:
         - "btcd:blockchain"
-        - "lnd:lnd"
         - "sqk_alice:sqk_alice"
         - "sqk_bob:sqk_bob"
         - "sqk_carol:sqk_carol"
@@ -150,5 +189,9 @@ volumes:
     driver: local
 
   # lnd_dir volume is needed for sharing tht tls certificate
-  lnd_dir:
+  lnd_dir_alice:
+    driver: local
+  lnd_dir_bob:
+    driver: local
+  lnd_dir_carol:
     driver: local
