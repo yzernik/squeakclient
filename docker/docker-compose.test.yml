@@ -1,6 +1,40 @@
 version: '2'
 services:
 
+    # container start within starting script.
+    btc:
+      image: btcd
+      build:
+        context: ../
+        dockerfile: docker/btcd/Dockerfile
+      volumes:
+            - shared:/rpc
+            - bitcoin:/data
+      environment:
+        - RPCUSER
+        - RPCPASS
+        - NETWORK
+
+    btcd:
+        extends: btc
+        container_name: btcd
+        environment:
+          - DEBUG
+          - MINING_ADDRESS
+        ports:
+          - 8334:8334
+          - 18334:18334
+          - 18556:18556
+          - 28902:28902
+        entrypoint: ["./start-btcd.sh"]
+
+    btcctl:
+        extends: btc
+        container_name: btcctl
+        links:
+            - "btcd:rpcserver"
+        entrypoint: ["./start-btcctl.sh"]
+
     lnd:
         image: lnd
         container_name: lnd
@@ -15,7 +49,10 @@ services:
           - DEBUG
           - RPC_LISTEN="0.0.0.0:10009"
         volumes:
+          - shared:/rpc
           - lnd_dir:/root/.lnd
+        links:
+          - "btcd:blockchain"
         entrypoint: ["./start-lnd.sh"]
 
     sqk_alice:
@@ -32,8 +69,10 @@ services:
           - DEBUG
           - HEADLESS
         volumes:
+          - shared:/rpc
           - lnd_dir:/root/.lnd
         links:
+          - "btcd:blockchain"
           - "lnd:lnd"
         entrypoint: ["./start-sqk.sh"]
 
@@ -51,8 +90,10 @@ services:
           - DEBUG
           - HEADLESS
         volumes:
+          - shared:/rpc
           - lnd_dir:/root/.lnd
         links:
+          - "btcd:blockchain"
           - "lnd:lnd"
         entrypoint: ["./start-sqk.sh"]
 
@@ -70,8 +111,10 @@ services:
           - DEBUG
           - HEADLESS
         volumes:
+          - shared:/rpc
           - lnd_dir:/root/.lnd
         links:
+          - "btcd:blockchain"
           - "lnd:lnd"
         entrypoint: ["./start-sqk.sh"]
 
@@ -81,6 +124,7 @@ services:
         context: ../
         dockerfile: docker/test/Dockerfile
       links:
+        - "btcd:blockchain"
         - "lnd:lnd"
         - "sqk_alice:sqk_alice"
         - "sqk_bob:sqk_bob"
@@ -96,6 +140,15 @@ services:
         - 8080:80
 
 volumes:
+  # btcctl and lnd containers.
+  shared:
+    driver: local
+
+  # bitcoin volume is needed for maintaining blockchain persistence
+  # during btcd container recreation.
+  bitcoin:
+    driver: local
+
   # lnd_dir volume is needed for sharing tht tls certificate
   lnd_dir:
     driver: local

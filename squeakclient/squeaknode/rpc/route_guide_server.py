@@ -114,7 +114,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         route_guide_pb2_grpc.add_RouteGuideServicer_to_server(
             self, server)
-        server.add_insecure_port('[::]:50051')
+        server.add_insecure_port('0.0.0.0:50051')
         server.start()
         server.wait_for_termination()
 

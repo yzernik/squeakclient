@@ -41,28 +41,19 @@ set_default() {
 # Set default variables if needed.
 RPCUSER=$(set_default "$RPCUSER" "devuser")
 RPCPASS=$(set_default "$RPCPASS" "devpass")
-DEBUG=$(set_default "$DEBUG" "debug")
-NETWORK=$(set_default "$NETWORK" "testnet")
-CHAIN=$(set_default "$CHAIN" "bitcoin")
-BACKEND="btcd"
-if [[ "$CHAIN" == "litecoin" ]]; then
-    BACKEND="ltcd"
+NETWORK=$(set_default "$NETWORK" "simnet")
+
+PARAMS=""
+if [ "$NETWORK" != "mainnet" ]; then
+    PARAMS=$(echo --$NETWORK)
 fi
 
-# Add btcd's RPC TLS certificate to system Certificate Authority list.	exec runsqueak \
-cp /rpc/rpc.cert /usr/share/ca-certificates/btcd.crt
-echo btcd.crt >> /etc/ca-certificates.conf
-update-ca-certificates
+PARAMS=$(echo $PARAMS \
+    "--rpccert=/rpc/rpc.cert" \
+    "--rpcuser=$RPCUSER" \
+    "--rpcpass=$RPCPASS" \
+    "--rpcserver=rpcserver" \
+)
 
-# To make python requests use the system ca-certificates bundle, it
-# needs to be told to use it over its own embedded bundle
-export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-
-exec runsqueak \
-     "--network"="$NETWORK" \
-     "--rpcuser"="$RPCUSER" \
-     "--rpcpass"="$RPCPASS" \
-     "--$BACKEND.rpchost"="blockchain" \
-     "--$BACKEND.rpcuser"="$RPCUSER" \
-     "--$BACKEND.rpcpass"="$RPCPASS" \
-     --log-level="$DEBUG" \
+PARAMS="$PARAMS $@"
+exec btcctl $PARAMS

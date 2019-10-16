@@ -41,8 +41,8 @@ set_default() {
 # Set default variables if needed.
 RPCUSER=$(set_default "$RPCUSER" "devuser")
 RPCPASS=$(set_default "$RPCPASS" "devpass")
-DEBUG=$(set_default "$DEBUG" "info")
-NETWORK=$(set_default "$NETWORK" "testnet")
+DEBUG=$(set_default "$DEBUG" "debug")
+NETWORK=$(set_default "$NETWORK" "simnet")
 CHAIN=$(set_default "$CHAIN" "bitcoin")
 BACKEND="btcd"
 RPC_LISTEN=$(set_default "$RPC_LISTEN" "localhost:10009")
@@ -55,7 +55,7 @@ exec lnd \
     --logdir="/data" \
     "--$CHAIN.active" \
     "--$CHAIN.$NETWORK" \
-    "--$CHAIN.node"="neutrino" \
+    "--$CHAIN.node"="btcd" \
     "--$BACKEND.rpccert"="/rpc/rpc.cert" \
     "--$BACKEND.rpchost"="blockchain" \
     "--$BACKEND.rpcuser"="$RPCUSER" \
@@ -65,6 +65,4 @@ exec lnd \
     --rpclisten=0.0.0.0:10009 \
     --debuglevel="$DEBUG" \
     --tlsextradomain=lnd \
-    --neutrino.connect=testnet1-btcd.zaphq.io \
-    --neutrino.connect=testnet2-btcd.zaphq.io \
     "$@"

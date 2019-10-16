@@ -49,9 +49,4 @@ exec runsqueakctl \
      "--host"="$RPCHOST" \
      "--rpcuser"="$RPCUSER" \
      "--rpcpass"="$RPCPASS" \
-     # "--$NETWORK" \
-     # --rpccert="/rpc/rpc.cert" \
-     # --rpcuser="$RPCUSER" \
-     # --rpcpass="$RPCPASS" \
-     # --rpcserver="rpcserver" \
      "$@"

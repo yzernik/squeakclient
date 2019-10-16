@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 # we need to use that cipher suite otherwise there will be a handhsake
 # error when we communicate with the lnd rpc server.
 os.environ["GRPC_SSL_CIPHER_SUITES"] = 'HIGH+ECDSA'
+os.environ["GRPC_VERBOSITY"] = 'DEBUG'
 
 # Lnd cert is at ~/.lnd/tls.cert on Linux and
 # ~/Library/Application Support/Lnd/tls.cert on Mac
@@ -47,7 +48,7 @@ def checkIsOpen(ip,port):
 
 # Lnd admin macaroon is at ~/.lnd/data/chain/bitcoin/simnet/admin.macaroon on Linux and
 # ~/Library/Application Support/Lnd/data/chain/bitcoin/simnet/admin.macaroon on Mac
-with open(os.path.expanduser('~/.lnd/data/chain/bitcoin/testnet/admin.macaroon'), 'rb') as f:
+with open(os.path.expanduser('~/.lnd/data/chain/bitcoin/simnet/admin.macaroon'), 'rb') as f:
     macaroon_bytes = f.read()
     macaroon = codecs.encode(macaroon_bytes, 'hex')
 

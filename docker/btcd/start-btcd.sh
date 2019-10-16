@@ -41,28 +41,34 @@ set_default() {
 # Set default variables if needed.
 RPCUSER=$(set_default "$RPCUSER" "devuser")
 RPCPASS=$(set_default "$RPCPASS" "devpass")
-DEBUG=$(set_default "$DEBUG" "debug")
-NETWORK=$(set_default "$NETWORK" "testnet")
-CHAIN=$(set_default "$CHAIN" "bitcoin")
-BACKEND="btcd"
-if [[ "$CHAIN" == "litecoin" ]]; then
-    BACKEND="ltcd"
+DEBUG=$(set_default "$DEBUG" "info")
+NETWORK=$(set_default "$NETWORK" "simnet")
+
+PARAMS=""
+if [ "$NETWORK" != "mainnet" ]; then
+   PARAMS=$(echo --$NETWORK)
 fi
 
-# Add btcd's RPC TLS certificate to system Certificate Authority list.	exec runsqueak \
-cp /rpc/rpc.cert /usr/share/ca-certificates/btcd.crt
-echo btcd.crt >> /etc/ca-certificates.conf
-update-ca-certificates
+PARAMS=$(echo $PARAMS \
+    "--debuglevel=$DEBUG" \
+    "--rpcuser=$RPCUSER" \
+    "--rpcpass=$RPCPASS" \
+    "--datadir=/data" \
+    "--logdir=/data" \
+    "--rpccert=/rpc/rpc.cert" \
+    "--rpckey=/rpc/rpc.key" \
+    "--rpclisten=0.0.0.0" \
+    "--txindex"
+)
 
-# To make python requests use the system ca-certificates bundle, it
-# needs to be told to use it over its own embedded bundle
-export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+# Set the mining flag only if address is non empty.
+if [[ -n "$MINING_ADDRESS" ]]; then
+    PARAMS="$PARAMS --miningaddr=$MINING_ADDRESS"
+fi
 
-exec runsqueak \
-     "--network"="$NETWORK" \
-     "--rpcuser"="$RPCUSER" \
-     "--rpcpass"="$RPCPASS" \
-     "--$BACKEND.rpchost"="blockchain" \
-     "--$BACKEND.rpcuser"="$RPCUSER" \
-     "--$BACKEND.rpcpass"="$RPCPASS" \
-     --log-level="$DEBUG" \
+# Add user parameters to command.
+PARAMS="$PARAMS $@"
+
+# Print command and start bitcoin node.
+echo "Command: btcd $PARAMS"
+exec btcd $PARAMS
