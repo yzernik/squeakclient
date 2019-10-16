@@ -1,39 +1,48 @@
-version: '2'
+version: '3'
 services:
 
-    # container start within starting script.
-    btc:
+    btcd:
       image: btcd
+      container_name: btcd
       build:
         context: ../
         dockerfile: docker/btcd/Dockerfile
       volumes:
-            - shared:/rpc
-            - bitcoin:/data
+        - shared:/rpc
+        - bitcoin:/data
       environment:
         - RPCUSER
         - RPCPASS
         - NETWORK
-
-    btcd:
-        extends: btc
-        container_name: btcd
-        environment:
-          - DEBUG
-          - MINING_ADDRESS
-        ports:
-          - 8334:8334
-          - 18334:18334
-          - 18556:18556
-          - 28902:28902
-        entrypoint: ["./start-btcd.sh"]
+      environment:
+        - DEBUG
+        - MINING_ADDRESS
+      ports:
+        - 8334:8334
+        - 18334:18334
+        - 18556:18556
+        - 28902:28902
+      entrypoint: ["./start-btcd.sh"]
 
     btcctl:
-        extends: btc
-        container_name: btcctl
-        links:
-            - "btcd:rpcserver"
-        entrypoint: ["./start-btcctl.sh"]
+      image: btcd
+      container_name: btcctl
+      build:
+        context: ../
+        dockerfile: docker/btcd/Dockerfile
+      volumes:
+        - shared:/rpc
+        - bitcoin:/data
+      environment:
+        - RPCUSER
+        - RPCPASS
+        - NETWORK
+      environment:
+        - DEBUG
+        - MINING_ADDRESS
+      links:
+        - "btcd:rpcserver"
+      entrypoint: ["./start-btcctl.sh"]
 
     lnd_alice:
         image: lnd

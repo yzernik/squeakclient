@@ -1,5 +1,48 @@
-version: '2'
+version: '3'
 services:
+
+    btcd:
+      image: btcd
+      container_name: btcd
+      build:
+        context: ../
+        dockerfile: docker/btcd/Dockerfile
+      volumes:
+        - shared:/rpc
+        - bitcoin:/data
+      environment:
+        - RPCUSER
+        - RPCPASS
+        - NETWORK
+      environment:
+        - DEBUG
+        - MINING_ADDRESS
+      ports:
+        - 8334:8334
+        - 18334:18334
+        - 18556:18556
+        - 28902:28902
+      entrypoint: ["./start-btcd.sh"]
+
+    btcctl:
+      image: btcd
+      container_name: btcctl
+      build:
+        context: ../
+        dockerfile: docker/btcd/Dockerfile
+      volumes:
+        - shared:/rpc
+        - bitcoin:/data
+      environment:
+        - RPCUSER
+        - RPCPASS
+        - NETWORK
+      environment:
+        - DEBUG
+        - MINING_ADDRESS
+      links:
+        - "btcd:rpcserver"
+      entrypoint: ["./start-btcctl.sh"]
 
     lnd:
         image: lnd
@@ -17,6 +60,8 @@ services:
         volumes:
           - shared:/rpc
           - lnd_dir:/root/.lnd
+        links:
+          - "btcd:blockchain"
         entrypoint: ["./start-lnd.sh"]
 
     sqk:
@@ -36,11 +81,19 @@ services:
           - shared:/rpc
           - lnd_dir:/root/.lnd
         links:
+          - "btcd:blockchain"
           - "lnd:lnd"
         entrypoint: ["./start-sqk.sh"]
 
+    frontend:
+      container_name: frontend
+      build:
+        context: ../
+        dockerfile: docker/frontend/Dockerfile
+      ports:
+        - 8080:80
+
 volumes:
-  # shared volume is need to store the btcd rpc certificates and use it within
   # btcctl and lnd containers.
   shared:
     driver: local
