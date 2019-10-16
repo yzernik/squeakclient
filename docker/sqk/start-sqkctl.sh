@@ -42,7 +42,7 @@ set_default() {
 RPCHOST=$(set_default "$RPCHOST" "localhost")
 RPCUSER=$(set_default "$RPCUSER" "devuser")
 RPCPASS=$(set_default "$RPCPASS" "devpass")
-NETWORK=$(set_default "$NETWORK" "testnet")
+NETWORK=$(set_default "$NETWORK" "simnet")
 
 exec runsqueakctl \
      "--network"="$NETWORK" \

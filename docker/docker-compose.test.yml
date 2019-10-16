@@ -1,191 +1,197 @@
 version: '3'
 services:
 
-    btcd:
-      image: btcd
-      container_name: btcd
-      build:
-        context: ../
-        dockerfile: docker/btcd/Dockerfile
-      volumes:
-        - shared:/rpc
-        - bitcoin:/data
-      environment:
-        - RPCUSER
-        - RPCPASS
-        - NETWORK
-      environment:
-        - DEBUG
-        - MINING_ADDRESS
-      ports:
-        - 8334:8334
-        - 18334:18334
-        - 18556:18556
-        - 28902:28902
-      entrypoint: ["./start-btcd.sh"]
+  btcd:
+    image: btcd
+    container_name: btcd
+    build:
+      context: ../
+      dockerfile: docker/btcd/Dockerfile
+    volumes:
+      - shared:/rpc
+      - bitcoin:/data
+    environment:
+      - RPCUSER
+      - RPCPASS
+      - NETWORK
+    environment:
+      - DEBUG
+      - MINING_ADDRESS
+    ports:
+      - 8334:8334
+      - 18334:18334
+      - 18556:18556
+      - 28902:28902
+    entrypoint: ["./start-btcd.sh"]
 
-    btcctl:
-      image: btcd
-      container_name: btcctl
-      build:
-        context: ../
-        dockerfile: docker/btcd/Dockerfile
-      volumes:
-        - shared:/rpc
-        - bitcoin:/data
-      environment:
-        - RPCUSER
-        - RPCPASS
-        - NETWORK
-      environment:
-        - DEBUG
-        - MINING_ADDRESS
-      links:
-        - "btcd:rpcserver"
-      entrypoint: ["./start-btcctl.sh"]
+  btcctl:
+    image: btcd
+    container_name: btcctl
+    build:
+      context: ../
+      dockerfile: docker/btcd/Dockerfile
+    volumes:
+      - shared:/rpc
+      - bitcoin:/data
+    environment:
+      - RPCUSER
+      - RPCPASS
+      - NETWORK
+    environment:
+      - DEBUG
+      - MINING_ADDRESS
+    links:
+      - "btcd:rpcserver"
+    entrypoint: ["./start-btcctl.sh"]
 
-    lnd_alice:
-        image: lnd
-        container_name: lnd_alice
-        build:
-          context: ../
-          dockerfile: docker/lnd/Dockerfile
-        environment:
-          - RPCUSER
-          - RPCPASS
-          - NETWORK
-          - CHAIN
-          - DEBUG
-          - RPC_LISTEN="0.0.0.0:10009"
-        volumes:
-          - shared:/rpc
-          - lnd_dir_alice:/root/.lnd
-        links:
-          - "btcd:blockchain"
-        entrypoint: ["./start-lnd.sh"]
+  lnd_alice:
+    image: lnd
+    container_name: lnd_alice
+    build:
+      context: ../
+      dockerfile: docker/lnd/Dockerfile
+    environment:
+      - RPCUSER
+      - RPCPASS
+      - NETWORK
+      - CHAIN
+      - DEBUG
+      - RPC_LISTEN="0.0.0.0:10009"
+    volumes:
+      - shared:/rpc
+      - lnd_dir_alice:/root/.lnd
+    links:
+      - "btcd:blockchain"
+    entrypoint: ["./start-lnd.sh"]
 
-    lnd_bob:
-        image: lnd
-        container_name: lnd_bob
-        build:
-          context: ../
-          dockerfile: docker/lnd/Dockerfile
-        environment:
-          - RPCUSER
-          - RPCPASS
-          - NETWORK
-          - CHAIN
-          - DEBUG
-          - RPC_LISTEN="0.0.0.0:10009"
-        volumes:
-          - shared:/rpc
-          - lnd_dir_bob:/root/.lnd
-        links:
-          - "btcd:blockchain"
-        entrypoint: ["./start-lnd.sh"]
+  lnd_bob:
+    image: lnd
+    container_name: lnd_bob
+    build:
+      context: ../
+      dockerfile: docker/lnd/Dockerfile
+    environment:
+      - RPCUSER
+      - RPCPASS
+      - NETWORK
+      - CHAIN
+      - DEBUG
+      - RPC_LISTEN="0.0.0.0:10009"
+    volumes:
+      - shared:/rpc
+      - lnd_dir_bob:/root/.lnd
+    links:
+      - "btcd:blockchain"
+    entrypoint: ["./start-lnd.sh"]
 
-    lnd_carol:
-        image: lnd
-        container_name: lnd_carol
-        build:
-          context: ../
-          dockerfile: docker/lnd/Dockerfile
-        environment:
-          - RPCUSER
-          - RPCPASS
-          - NETWORK
-          - CHAIN
-          - DEBUG
-          - RPC_LISTEN="0.0.0.0:10009"
-        volumes:
-          - shared:/rpc
-          - lnd_dir_carol:/root/.lnd
-        links:
-          - "btcd:blockchain"
-        entrypoint: ["./start-lnd.sh"]
+  lnd_carol:
+    image: lnd
+    container_name: lnd_carol
+    build:
+      context: ../
+      dockerfile: docker/lnd/Dockerfile
+    environment:
+      - RPCUSER
+      - RPCPASS
+      - NETWORK
+      - CHAIN
+      - DEBUG
+      - RPC_LISTEN="0.0.0.0:10009"
+    volumes:
+      - shared:/rpc
+      - lnd_dir_carol:/root/.lnd
+    links:
+      - "btcd:blockchain"
+    entrypoint: ["./start-lnd.sh"]
 
-    sqk_alice:
-        image: sqk
-        container_name: sqk_alice
-        build:
-          context: ../
-          dockerfile: docker/sqk/Dockerfile
-        environment:
-          - RPCUSER
-          - RPCPASS
-          - NETWORK
-          - CHAIN
-          - DEBUG
-          - HEADLESS
-        volumes:
-          - shared:/rpc
-          - lnd_dir_alice:/root/.lnd
-        links:
-          - "btcd:blockchain"
-          - "lnd_alice:lnd"
-        entrypoint: ["./start-sqk.sh"]
+  sqk_alice:
+    image: sqk
+    container_name: sqk_alice
+    build:
+      context: ../
+      dockerfile: docker/sqk/Dockerfile
+    environment:
+      - RPCUSER
+      - RPCPASS
+      - NETWORK
+      - CHAIN
+      - DEBUG
+      - HEADLESS
+    volumes:
+      - shared:/rpc
+      - lnd_dir_alice:/root/.lnd
+    links:
+      - "btcd:blockchain"
+      - "lnd_alice:lnd"
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+    entrypoint: ["./start-sqk.sh"]
 
-    sqk_bob:
-        image: sqk
-        container_name: sqk_bob
-        build:
-          context: ../
-          dockerfile: docker/sqk/Dockerfile
-        environment:
-          - RPCUSER
-          - RPCPASS
-          - NETWORK
-          - CHAIN
-          - DEBUG
-          - HEADLESS
-        volumes:
-          - shared:/rpc
-          - lnd_dir_bob:/root/.lnd
-        links:
-          - "btcd:blockchain"
-          - "lnd_bob:lnd"
-        entrypoint: ["./start-sqk.sh"]
+  sqk_bob:
+    image: sqk
+    container_name: sqk_bob
+    build:
+      context: ../
+      dockerfile: docker/sqk/Dockerfile
+    environment:
+      - RPCUSER
+      - RPCPASS
+      - NETWORK
+      - CHAIN
+      - DEBUG
+      - HEADLESS
+    volumes:
+      - shared:/rpc
+      - lnd_dir_bob:/root/.lnd
+    links:
+      - "btcd:blockchain"
+      - "lnd_bob:lnd"
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+    entrypoint: ["./start-sqk.sh"]
 
-    sqk_carol:
-        image: sqk
-        container_name: sqk_carol
-        build:
-          context: ../
-          dockerfile: docker/sqk/Dockerfile
-        environment:
-          - RPCUSER
-          - RPCPASS
-          - NETWORK
-          - CHAIN
-          - DEBUG
-          - HEADLESS
-        volumes:
-          - shared:/rpc
-          - lnd_dir_carol:/root/.lnd
-        links:
-          - "btcd:blockchain"
-          - "lnd_carol:lnd"
-        entrypoint: ["./start-sqk.sh"]
+  sqk_carol:
+    image: sqk
+    container_name: sqk_carol
+    build:
+      context: ../
+      dockerfile: docker/sqk/Dockerfile
+    environment:
+      - RPCUSER
+      - RPCPASS
+      - NETWORK
+      - CHAIN
+      - DEBUG
+      - HEADLESS
+    volumes:
+      - shared:/rpc
+      - lnd_dir_carol:/root/.lnd
+    links:
+      - "btcd:blockchain"
+      - "lnd_carol:lnd"
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+    entrypoint: ["./start-sqk.sh"]
 
-    test:
-      image: test
-      build:
-        context: ../
-        dockerfile: docker/test/Dockerfile
-      links:
-        - "btcd:blockchain"
-        - "sqk_alice:sqk_alice"
-        - "sqk_bob:sqk_bob"
-        - "sqk_carol:sqk_carol"
-      entrypoint: ["./test.sh"]
+  test:
+    image: test
+    build:
+      context: ../
+      dockerfile: docker/test/Dockerfile
+    links:
+      - "btcd:blockchain"
+      - "sqk_alice:sqk_alice"
+      - "sqk_bob:sqk_bob"
+      - "sqk_carol:sqk_carol"
+    entrypoint: ["./test.sh"]
 
-    frontend:
-      container_name: frontend
-      build:
-        context: ../
-        dockerfile: docker/frontend/Dockerfile
-      ports:
-        - 8080:80
+  frontend:
+    container_name: frontend
+    build:
+      context: ../
+      dockerfile: docker/frontend/Dockerfile
+    ports:
+      - 8080:80
 
 volumes:
   # btcctl and lnd containers.

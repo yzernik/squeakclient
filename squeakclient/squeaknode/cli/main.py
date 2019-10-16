@@ -21,7 +21,7 @@ def parse_args():
         dest='network',
         type=str,
         default='mainnet',
-        choices=['mainnet', 'testnet', 'regtest'],
+        choices=['mainnet', 'testnet', 'regtest', 'simnet'],
         help='The bitcoin network to use',
     )
     parser.add_argument(
