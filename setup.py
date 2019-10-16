@@ -20,7 +20,7 @@ setup(
         'squeak',
     ],
     install_requires=[
-        "squeaklib>=0.1.1",
+        "squeaklib>=0.1.4",
         "grpcio",
         "grpcio-tools",
     ],
