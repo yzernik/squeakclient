@@ -24,7 +24,12 @@ def load_storage() -> Storage:
 
 
 def load_blockchain(rpc_host, rpc_user, rpc_pass) -> Blockchain:
-    return None
+    return RPCBlockchain(
+        host=rpc_host,
+        port=18556,
+        rpc_user=rpc_user,
+        rpc_password=rpc_pass,
+    )
 
 
 def load_lightning_client() -> LightningClient:
