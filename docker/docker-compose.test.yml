@@ -8,8 +8,8 @@ services:
       context: ../
       dockerfile: docker/btcd/Dockerfile
     volumes:
-      - shared:/rpc
-      - bitcoin:/data
+      - shared_test:/rpc
+      - bitcoin_test:/data
     environment:
       - RPCUSER
       - RPCPASS
@@ -31,8 +31,8 @@ services:
       context: ../
       dockerfile: docker/btcd/Dockerfile
     volumes:
-      - shared:/rpc
-      - bitcoin:/data
+      - shared_test:/rpc
+      - bitcoin_test:/data
     environment:
       - RPCUSER
       - RPCPASS
@@ -58,7 +58,7 @@ services:
       - DEBUG
       - RPC_LISTEN="0.0.0.0:10009"
     volumes:
-      - shared:/rpc
+      - shared_test:/rpc
       - lnd_dir_alice:/root/.lnd
     links:
       - "btcd:blockchain"
@@ -78,7 +78,7 @@ services:
       - DEBUG
       - RPC_LISTEN="0.0.0.0:10009"
     volumes:
-      - shared:/rpc
+      - shared_test:/rpc
       - lnd_dir_bob:/root/.lnd
     links:
       - "btcd:blockchain"
@@ -98,7 +98,7 @@ services:
       - DEBUG
       - RPC_LISTEN="0.0.0.0:10009"
     volumes:
-      - shared:/rpc
+      - shared_test:/rpc
       - lnd_dir_carol:/root/.lnd
     links:
       - "btcd:blockchain"
@@ -118,7 +118,7 @@ services:
       - DEBUG
       - HEADLESS
     volumes:
-      - shared:/rpc
+      - shared_test:/rpc
       - lnd_dir_alice:/root/.lnd
     links:
       - "btcd:blockchain"
@@ -141,7 +141,7 @@ services:
       - DEBUG
       - HEADLESS
     volumes:
-      - shared:/rpc
+      - shared_test:/rpc
       - lnd_dir_bob:/root/.lnd
     links:
       - "btcd:blockchain"
@@ -164,7 +164,7 @@ services:
       - DEBUG
       - HEADLESS
     volumes:
-      - shared:/rpc
+      - shared_test:/rpc
       - lnd_dir_carol:/root/.lnd
     links:
       - "btcd:blockchain"
@@ -175,6 +175,7 @@ services:
 
   test:
     image: test
+    container_name: test
     build:
       context: ../
       dockerfile: docker/test/Dockerfile
@@ -183,7 +184,7 @@ services:
       - "sqk_alice:sqk_alice"
       - "sqk_bob:sqk_bob"
       - "sqk_carol:sqk_carol"
-    entrypoint: ["./test.sh"]
+    command: tail -f /dev/null
 
   frontend:
     container_name: frontend
@@ -195,12 +196,12 @@ services:
 
 volumes:
   # btcctl and lnd containers.
-  shared:
+  shared_test:
     driver: local
 
-  # bitcoin volume is needed for maintaining blockchain persistence
+  # bitcoin_test volume is needed for maintaining blockchain persistence
   # during btcd container recreation.
-  bitcoin:
+  bitcoin_test:
     driver: local
 
   # lnd_dir volume is needed for sharing tht tls certificate

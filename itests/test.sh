@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Wait for nodes to start up.
-sleep 10
+sleep 1
 
 # Connect alice to bob.
 add_peer_output=$(./sqk_ctl.exp "sqk_alice" "addpeer sqk_bob")
@@ -37,7 +37,7 @@ sleep 1
 get_wallet_balance_output=$(./sqk_ctl.exp "sqk_alice" "getwalletbalance")
 echo "get_wallet_balance_output"
 echo $get_wallet_balance_output
-if [ "$get_wallet_balance_output" != "0" ]; then
+if [ "$get_wallet_balance_output" != "1505000000000" ]; then
     echo "get_wallet_balance_output is not correct"
     exit 1
 fi
