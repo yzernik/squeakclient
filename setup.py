@@ -16,6 +16,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(),
+    zip_safe=True,
     keywords=[
         'squeak',
     ],
