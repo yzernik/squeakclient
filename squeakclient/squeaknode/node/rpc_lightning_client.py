@@ -38,5 +38,4 @@ class RPCLightningClient(LightningClient):
 
     def get_wallet_balance(self):
         # Retrieve and display the wallet balance
-        response = stub.WalletBalance(ln.WalletBalanceRequest(), metadata=[('macaroon', macaroon)])
-        return response.total_balance
+        return stub.WalletBalance(ln.WalletBalanceRequest(), metadata=[('macaroon', macaroon)])

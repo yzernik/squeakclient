@@ -50,6 +50,22 @@ service RouteGuide {
   // Accepts a stream of RouteNotes sent while a route is being traversed,
   // while receiving other RouteNotes (e.g. from other users).
   rpc RouteChat(stream RouteNote) returns (stream RouteNote) {}
+
+  /** sqk: `walletbalance`
+  WalletBalance returns total unspent outputs(confirmed and unconfirmed), all
+  confirmed unspent outputs and all unconfirmed unspent outputs under control
+  of the wallet.
+  */
+  rpc WalletBalance (WalletBalanceRequest) returns (WalletBalanceResponse) {}
+
+  /** sqk: `addpeer`
+  */
+  rpc AddPeer (AddPeerRequest) returns (AddPeerResponse) {}
+
+  /** lncli: `listpeers`
+  ListPeers returns a verbose listing of all currently active peers.
+  */
+  rpc ListPeers (ListPeersRequest) returns (ListPeersResponse) {}
 }
 
 // Points are represented as latitude-longitude pairs in the E7 representation
@@ -108,4 +124,78 @@ message RouteSummary {
 
   // The duration of the traversal in seconds.
   int32 elapsed_time = 4;
+}
+
+message WalletBalanceRequest {
+}
+
+message WalletBalanceResponse {
+    /// The balance of the wallet
+    int64 total_balance = 1 [json_name = "total_balance"];
+
+    /// The confirmed balance of a wallet(with >= 1 confirmations)
+    int64 confirmed_balance = 2 [json_name = "confirmed_balance"];
+
+    /// The unconfirmed balance of a wallet(with 0 confirmations)
+    int64 unconfirmed_balance = 3 [json_name = "unconfirmed_balance"];
+}
+
+// message GetPeersRequest {
+// }
+
+// message GetPeersResponse {
+//     /// The balance of the wallet
+//     int64 total_balance = 1 [json_name = "total_balance"];
+
+//     /// The confirmed balance of a wallet(with >= 1 confirmations)
+//     int64 confirmed_balance = 2 [json_name = "confirmed_balance"];
+
+//     /// The unconfirmed balance of a wallet(with 0 confirmations)
+//     int64 unconfirmed_balance = 3 [json_name = "unconfirmed_balance"];
+// }
+
+message AddPeerRequest {
+    // The address of the peer to add.
+    Addr addr = 1;
+}
+
+message AddPeerResponse {
+}
+
+message ListPeersRequest {
+}
+
+message ListPeersResponse {
+    /// The list of currently connected peers
+    repeated Peer peers = 1 [json_name = "peers"];
+}
+
+message Addr {
+  string host = 1;
+}
+
+message Peer {
+    /// Network host of the peer; eg `127.0.0.1`
+    string host = 1 [json_name = "host"];
+
+    /// Network host of the peer; eg `10011`
+    uint64 port = 2 [json_name = "port"];
+
+    /// Bytes of data transmitted to this peer
+    uint64 bytes_sent = 3 [json_name = "bytes_sent"];
+
+    /// Bytes of data transmitted from this peer
+    uint64 bytes_recv = 4 [json_name = "bytes_recv"];
+
+    /// Satoshis sent to this peer
+    int64 sat_sent = 5 [json_name = "sat_sent"];
+
+    /// Satoshis received from this peer
+    int64 sat_recv = 6 [json_name = "sat_recv"];
+
+    /// A channel is inbound if the counterparty initiated the connection
+    bool inbound = 7 [json_name = "inbound"];
+
+    /// Ping time to this peer
+    int64 ping_time = 8 [json_name = "ping_time"];
 }

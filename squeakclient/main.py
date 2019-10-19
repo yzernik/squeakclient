@@ -67,8 +67,8 @@ def _start_rpc_server(node, port, rpc_user, rpc_pass):
     return rpc_server, thread
 
 
-def _start_route_guide_rpc_server():
-    server = RouteGuideServicer()
+def _start_route_guide_rpc_server(node):
+    server = RouteGuideServicer(node)
     thread = threading.Thread(
         target=server.serve,
         args=(),
@@ -182,7 +182,7 @@ def main():
 
     # start rpc server
     rpc_server, rpc_server_thread = _start_rpc_server(node, args.rpcport, args.rpcuser, args.rpcpass)
-    route_guide_server, route_guide_server_thread = _start_route_guide_rpc_server()
+    route_guide_server, route_guide_server_thread = _start_route_guide_rpc_server(node)
 
     while True:
         time.sleep(10)

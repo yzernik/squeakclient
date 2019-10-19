@@ -18,7 +18,4 @@ coverage:
 mypy:
 	tox -e mypy
 
-freeze:
-	python -m fbs freeze
-
-.PHONY: all clean test coverage mypy freeze
+.PHONY: all clean test coverage mypy

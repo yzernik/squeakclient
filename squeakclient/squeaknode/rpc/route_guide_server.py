@@ -58,8 +58,9 @@ def get_distance(start, end):
 class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
     """Provides methods that implement functionality of route guide server."""
 
-    def __init__(self):
+    def __init__(self, node):
         self.db = route_guide_resources.read_route_guide_database()
+        self.node = node
 
     def GetFeature(self, request, context):
         feature = get_feature(self.db, request)
@@ -109,6 +110,32 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
                 if prev_note.location == new_note.location:
                     yield prev_note
             prev_notes.append(new_note)
+
+    def WalletBalance(self, request, context):
+        response = self.node.get_wallet_balance()
+        return route_guide_pb2.WalletBalanceResponse(
+            total_balance=response.total_balance,
+            confirmed_balance=response.confirmed_balance,
+            unconfirmed_balance=response.unconfirmed_balance,
+        )
+
+    def AddPeer(self, request, context):
+        host = request.addr.host
+        self.node.connect_host(host)
+        return route_guide_pb2.AddPeerResponse()
+
+    def ListPeers(self, request, context):
+        peers = self.node.get_peers()
+        peer_msgs = [
+            route_guide_pb2.Peer(
+                host=peer.address[0],
+                port=peer.address[1],
+            )
+            for peer in peers
+        ]
+        return route_guide_pb2.ListPeersResponse(
+            peers=peer_msgs,
+        )
 
     def serve(self):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
