@@ -27,6 +27,4 @@ RUN python3 setup.py install
 
 # Copy the entrypoint script.
 COPY "docker/sqk/start-sqk.sh" .
-COPY "docker/sqk/start-sqkctl.sh" .
 RUN chmod +x start-sqk.sh
-RUN chmod +x start-sqkctl.sh
