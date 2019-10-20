@@ -46,9 +46,6 @@ NETWORK=$(set_default "$NETWORK" "simnet")
 CHAIN=$(set_default "$CHAIN" "bitcoin")
 BACKEND="btcd"
 RPC_LISTEN=$(set_default "$RPC_LISTEN" "localhost:10009")
-if [[ "$CHAIN" == "litecoin" ]]; then
-    BACKEND="ltcd"
-fi
 
 exec lnd \
     --noseedbackup \

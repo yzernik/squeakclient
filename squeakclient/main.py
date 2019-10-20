@@ -22,23 +22,24 @@ def load_storage() -> Storage:
     return MemoryStorage()
 
 
-def load_blockchain(rpc_host, rpc_user, rpc_pass) -> Blockchain:
+def load_blockchain(rpc_host, rpc_port, rpc_user, rpc_pass) -> Blockchain:
     return RPCBlockchain(
         host=rpc_host,
-        port=18556,
+        port=rpc_port,
         rpc_user=rpc_user,
         rpc_password=rpc_pass,
     )
 
 
-def load_lightning_client() -> LightningClient:
-    return RPCLightningClient()
+def load_lightning_client(rpc_host, rpc_port, network) -> LightningClient:
+    return RPCLightningClient(
+        host=rpc_host,
+        port=rpc_port,
+        network=network,
+    )
 
 
-def _start_node(rpc_host, rpc_user, rpc_pass):
-    storage = load_storage()
-    blockchain = load_blockchain(rpc_host, rpc_user, rpc_pass)
-    lightning_client = load_lightning_client()
+def _start_node(storage, blockchain, lightning_client):
     node = ClientSqueakNode(storage, blockchain, lightning_client)
     thread = threading.Thread(
         target=node.start,
@@ -109,6 +110,13 @@ def parse_args():
         help='Blockchain (bitcoin) backend hostname',
     )
     parser.add_argument(
+        '--btcd.rpcport',
+        dest='btcd_rpcport',
+        type=int,
+        default=18332,
+        help='Blockchain (bitcoin) backend port',
+    )
+    parser.add_argument(
         '--btcd.rpcuser',
         dest='btcd_rpcuser',
         type=str,
@@ -123,16 +131,18 @@ def parse_args():
         help='Blockchain (bitcoin) backend password',
     )
     parser.add_argument(
-        '--headless',
-        dest='headless',
-        action='store_true',
-        help='Run in headlesss mode, without GUI',
+        '--lnd.rpchost',
+        dest='lnd_rpchost',
+        type=str,
+        default='localhost',
+        help='Lightning network backend hostname',
     )
     parser.add_argument(
-        '--no-headless',
-        dest='headless',
-        action='store_false',
-        help='Do not run in headlesss mode',
+        '--lnd.rpcport',
+        dest='lnd_rpcport',
+        type=int,
+        default=10009,
+        help='Lightning network backend port',
     )
     parser.add_argument(
         '--log-level',
@@ -153,14 +163,21 @@ def main():
 
     print('network:', args.network, flush=True)
     SelectParams(args.network)
-    rpc_host = args.btcd_rpchost
-    rpc_user = args.btcd_rpcuser
-    rpc_pass = args.btcd_rpcpass
-    print('rpc host:', rpc_host, flush=True)
-    print('rpc user:', rpc_user, flush=True)
-    print('rpc pass:', rpc_pass, flush=True)
 
-    node, thread = _start_node(rpc_host, rpc_user, rpc_pass)
+    storage = load_storage()
+    blockchain = load_blockchain(
+        args.btcd_rpchost,
+        args.btcd_rpcport,
+        args.btcd_rpcuser,
+        args.btcd_rpcpass,
+    )
+    lightning_client = load_lightning_client(
+        args.lnd_rpchost,
+        args.lnd_rpcport,
+        args.network,
+    )
+
+    node, thread = _start_node(storage, blockchain, lightning_client)
 
     # start rpc server
     route_guide_server, route_guide_server_thread = _start_route_guide_rpc_server(node)

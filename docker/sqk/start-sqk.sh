@@ -45,9 +45,20 @@ DEBUG=$(set_default "$DEBUG" "debug")
 NETWORK=$(set_default "$NETWORK" "simnet")
 CHAIN=$(set_default "$CHAIN" "bitcoin")
 BACKEND="btcd"
-if [[ "$CHAIN" == "litecoin" ]]; then
-    BACKEND="ltcd"
+
+# This is a hack that is needed because python-bitcoinlib does not
+# currently support simnet network.
+BTCD_RPC_PORT="18332"
+if [[ "$NETWORK" == "mainnet" ]]; then
+    BTCD_RPC_PORT="8334"
+elif [[ "$NETWORK" == "testnet" ]]; then
+    BTCD_RPC_PORT="18334"
+elif [[ "$NETWORK" == "regtest" ]]; then
+    BTCD_RPC_PORT="18445"
+elif [[ "$NETWORK" == "simnet" ]]; then
+    BTCD_RPC_PORT="18556"
 fi
+
 
 # Add btcd's RPC TLS certificate to system Certificate Authority list.	exec runsqueak \
 cp /rpc/rpc.cert /usr/share/ca-certificates/btcd.crt
@@ -63,6 +74,8 @@ exec runsqueak \
      "--rpcuser"="$RPCUSER" \
      "--rpcpass"="$RPCPASS" \
      "--$BACKEND.rpchost"="blockchain" \
+     "--$BACKEND.rpcport"="$BTCD_RPC_PORT" \
      "--$BACKEND.rpcuser"="$RPCUSER" \
      "--$BACKEND.rpcpass"="$RPCPASS" \
+     "--lnd.rpchost"="lnd" \
      --log-level="$DEBUG" \
