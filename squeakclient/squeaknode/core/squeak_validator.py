@@ -14,31 +14,23 @@ class SqueakValidator(object):
     def __init__(self, blockchain: Blockchain) -> None:
         self.blockchain = blockchain
 
-    def validate_squeak_header(self, squeak_header: CSqueakHeader) -> bool:
-        """Decide if a given squeak header is valid."""
-        try:
-            CheckSqueakHeader(squeak_header)
-        except CheckSqueakHeaderError:
-            return False
-        return self.check_block(squeak_header)
-
-    def validate_squeak(self, squeak: CSqueak) -> bool:
-        """Decide if a given squeak is valid."""
+    def is_valid_squeak(self, squeak: CSqueak, skipDecryptionCheck: bool = False) -> bool:
+        """Decide if the squeak is valid."""
         try:
             CheckSqueak(squeak)
         except CheckSqueakError:
             return False
-        return self.check_block(squeak)
+        return self.has_valid_block(squeak)
 
-    def validate_encrypted_squeak(self, squeak: CSqueak) -> bool:
-        """Decide if a given squeak is valid, without checking the decryption key."""
+    def is_valid_squeak_header(self, squeak_header: CSqueakHeader) -> bool:
+        """Decide if the squeak header is valid."""
         try:
-            CheckSqueak(squeak, skipDecryptionCheck=True)
-        except CheckSqueakError:
+            CheckSqueakHeader(squeak_header)
+        except CheckSqueakHeaderError:
             return False
-        return self.check_block(squeak)
+        return self.has_valid_block(squeak_header)
 
-    def check_block(self, squeak_header: CSqueakHeader) -> bool:
+    def has_valid_block(self, squeak_header: CSqueakHeader) -> bool:
         """Decide if the block height and block hash of a squeak header is valid."""
         block_height = squeak_header.nBlockHeight
         block_hash = squeak_header.hashBlock

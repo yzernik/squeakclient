@@ -2,11 +2,11 @@ import os
 
 import pytest
 from squeak.core import CheckSqueak
+from squeak.core import CheckSqueakDecryptionKeyError
 from squeak.core import HASH_LENGTH
 from squeak.core.signing import CSigningKey
 
 from squeakclient.squeaknode.core.blockchain import Blockchain
-from squeakclient.squeaknode.core.encoding import decode_content
 from squeakclient.squeaknode.core.squeak_maker import SqueakMaker
 
 
@@ -46,10 +46,26 @@ class TestSqueakMaker(object):
         assert squeak.nBlockHeight == blockchain.get_block_count()
         assert squeak.hashBlock == blockchain.get_block_hash(squeak.nBlockHeight)
 
-        decrypted_content = squeak.GetDecryptedContent()
-        decoded_content = decode_content(decrypted_content)
+        decrypted_content = squeak.GetDecryptedContentStr()
 
-        assert decoded_content == content
+        assert decrypted_content == content
+
+    def test_set_decryption_key(self, signing_key, verifying_key, blockchain):
+        maker = SqueakMaker(signing_key, blockchain)
+        content = 'Hello world!'
+        squeak = maker.make_squeak(content)
+        decryption_key = squeak.GetDecryptionKey()
+
+        CheckSqueak(squeak)
+
+        cleared_squeak = maker.clear_decryption_key(squeak)
+
+        with pytest.raises(CheckSqueakDecryptionKeyError):
+            CheckSqueak(cleared_squeak)
+
+        updated_squeak = maker.set_decryption_key(cleared_squeak, decryption_key)
+
+        CheckSqueak(updated_squeak)
 
 
 class MockBlockchain(Blockchain):

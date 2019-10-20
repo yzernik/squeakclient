@@ -47,7 +47,7 @@ class TestSqueakValidator(object):
         content = 'Hello world!'
         squeak = maker.make_squeak(content)
 
-        assert validator.validate_squeak(squeak)
+        assert validator.is_valid_squeak(squeak)
 
     def test_validate_squeak_header(self, signing_key, verifying_key, blockchain):
         validator = SqueakValidator(blockchain)
@@ -55,7 +55,7 @@ class TestSqueakValidator(object):
         content = 'Hello world!'
         squeak_header = maker.make_squeak(content).get_header()
 
-        assert validator.validate_squeak_header(squeak_header)
+        assert validator.is_valid_squeak_header(squeak_header)
 
     def test_validate_squeak_invalid(self, signing_key, verifying_key, blockchain, false_blockchain):
         validator = SqueakValidator(blockchain)
@@ -63,7 +63,7 @@ class TestSqueakValidator(object):
         content = 'Hello world!'
         squeak = maker.make_squeak(content)
 
-        assert not validator.validate_squeak(squeak)
+        assert not validator.is_valid_squeak(squeak)
 
     def test_validate_squeak_header_invalid(self, signing_key, verifying_key, blockchain, false_blockchain):
         validator = SqueakValidator(blockchain)
@@ -71,7 +71,16 @@ class TestSqueakValidator(object):
         content = 'Hello world!'
         squeak_header = maker.make_squeak(content).get_header()
 
-        assert not validator.validate_squeak_header(squeak_header)
+        assert not validator.is_valid_squeak_header(squeak_header)
+
+    def test_validate_squeak_invalid_decryption_key(self, signing_key, verifying_key, blockchain):
+        validator = SqueakValidator(blockchain)
+        maker = SqueakMaker(signing_key, blockchain)
+        content = 'Hello world!'
+        squeak = maker.make_squeak(content)
+        cleared_squeak = maker.clear_decryption_key(squeak)
+
+        assert not validator.is_valid_squeak(cleared_squeak)
 
 
 class MockBlockchain(Blockchain):
