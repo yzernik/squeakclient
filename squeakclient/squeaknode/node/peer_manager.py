@@ -16,8 +16,8 @@ UPDATE_THREAD_SLEEP_TIME = 10
 logger = logging.getLogger(__name__)
 
 
-class PeerNode(object):
-    """Network node that connnects to other peers in the network.
+class PeerManager(object):
+    """Maintains connections to other peers in the network.
     """
 
     def __init__(self, min_peers=MIN_PEERS, max_peers=MAX_PEERS, port=None):
@@ -105,11 +105,13 @@ class PeerNode(object):
                 return False
 
     def send_msg(self, peer, msg):
+        logger.debug('Sending msg {} to {}'.format(msg, peer))
         peer.send_msg(msg)
 
     def broadcast_msg(self, msg):
         for peer in list(self.peers.values()):
-            self.send_msg(peer, msg)
+            if peer.handshake_complete:
+                self.send_msg(peer, msg)
 
     def add_address(self, address):
         """Add a new address."""
@@ -146,12 +148,17 @@ class PeerNode(object):
     def handle_msg(self, msg, peer):
         """Main message handler.
         """
-        pass
+        logger.debug('Received msg {} from {}'.format(msg, peer))
+        self.peer_msg_handler.handle_peer_message(msg, peer)
 
     def on_connect(self, peer):
         """Action to take when a new peer connection is made.
         """
-        pass
+        logger.debug('Starting handshake with {}'.format(peer))
+        version = self.peer_msg_handler.version_pkt(peer)
+        peer.my_version = version
+        self.send_msg(peer, version)
+        peer.sent_version = True
 
     def connect_seed_peers(self):
         """Find more peers.
@@ -181,12 +188,3 @@ def get_seed_peer_addresses():
         address = resolve_hostname(seed_host)
         if address:
             yield address
-
-
-class PeerMessageHandler(object):
-
-    def initialize_peer(self, peer):
-        pass
-
-    def handle_peer_message(self, msg, peer):
-        pass
