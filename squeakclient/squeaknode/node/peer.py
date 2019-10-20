@@ -28,7 +28,7 @@ class Peer(object):
     def __init__(self, peer_socket, address, outgoing=False):
         time_now = int(time.time())
         self._peer_socket = peer_socket
-        self.address = address
+        self._address = address
         self.outgoing = outgoing
         self.connect_time = time_now
         self.my_version = None
@@ -46,13 +46,17 @@ class Peer(object):
             return self.version.nVersion
 
     @property
+    def address(self):
+        return self._address
+
+    @property
     def address_string(self):
-        ip, port = self.address
+        ip, port = self._address
         return '{}:{}'.format(ip, port)
 
     @property
     def caddress(self):
-        ip, port = self.address
+        ip, port = self._address
         caddress = CAddress()
         caddress.nTime = self.connect_time
         caddress.ip = ip
