@@ -12,15 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Python implementation of the gRPC route guide client."""
-
 from __future__ import print_function
 
-import random
 import logging
+import random
 import time
 
 import grpc
-
 import route_guide_pb2
 import route_guide_pb2_grpc
 
@@ -95,6 +93,7 @@ def guide_get_wallet_balance(stub):
     print("Balance confirmed %s %s" % (balance.total_balance, balance.total_balance))
     assert 1505000000000 == balance.total_balance
 
+
 def guide_add_peer(stub):
     # Add a new peer for alice.
     new_peer_host = 'sqk_bob'
@@ -112,11 +111,13 @@ def guide_add_peer(stub):
     print("Alice peers: %s" % alice_peers)
     assert 1 == len(alice_peers)
 
+
 def guide_generate_signing_key(stub):
     request = route_guide_pb2.GenerateSigningKeyRequest()
     response = stub.GenerateSigningKey(request)
     address = response.address
     print("Generated signing key with address: %s" % address)
+
 
 def guide_make_squeak(stub):
     content = 'hello world!'

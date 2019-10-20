@@ -1,7 +1,6 @@
-import pytest
-
 from collections import deque
 
+import pytest
 from squeak.messages import msg_version
 
 from squeakclient.squeaknode.node.peer import Peer

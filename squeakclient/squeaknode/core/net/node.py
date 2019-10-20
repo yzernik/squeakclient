@@ -1,8 +1,8 @@
 from typing import List
 
+from squeak.core.advertised_squeak import AdvertisedSqueak
 from squeak.core.squeak import Squeak
 from squeak.core.squeak_store import SqueakStore
-from squeak.core.advertised_squeak import AdvertisedSqueak
 
 
 class Node(object):

@@ -1,13 +1,12 @@
+import codecs
 import logging
-import grpc
 import os
 
-from squeakclient.squeaknode.core.lightning_client import LightningClient
+import grpc
 
 import squeakclient.rpc_pb2 as ln
 import squeakclient.rpc_pb2_grpc as lnrpc
-
-import codecs
+from squeakclient.squeaknode.core.lightning_client import LightningClient
 
 
 logger = logging.getLogger(__name__)
@@ -45,7 +44,7 @@ class RPCLightningClient(LightningClient):
         with open(os.path.expanduser(macaroon_path), 'rb') as f:
             macaroon_bytes = f.read()
             self.macaroon = codecs.encode(macaroon_bytes, 'hex'
-        )
+                                          )
 
     def get_wallet_balance(self):
         # Retrieve and display the wallet balance

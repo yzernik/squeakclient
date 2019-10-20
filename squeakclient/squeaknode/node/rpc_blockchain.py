@@ -1,7 +1,7 @@
+import json
 from typing import Optional
 
 import requests
-import json
 
 from squeakclient.squeaknode.core.blockchain import Blockchain
 

@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Python implementation of the gRPC route guide server."""
-
-from concurrent import futures
-import time
 import math
-import logging
+import time
+from concurrent import futures
 
 import grpc
 
@@ -164,8 +162,3 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         server.add_insecure_port('0.0.0.0:50051')
         server.start()
         server.wait_for_termination()
-
-
-if __name__ == '__main__':
-    logging.basicConfig()
-    serve()

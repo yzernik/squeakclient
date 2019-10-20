@@ -1,10 +1,7 @@
-import time
-import threading
-
 import argparse
 import logging
-
-import squeak.params
+import threading
+import time
 
 from squeak.params import SelectParams
 
@@ -12,9 +9,9 @@ from squeakclient.squeaknode.core.blockchain import Blockchain
 from squeakclient.squeaknode.core.lightning_client import LightningClient
 from squeakclient.squeaknode.core.stores.storage import Storage
 from squeakclient.squeaknode.node.clientsqueaknode import ClientSqueakNode
-from squeakclient.squeaknode.node.stores.memory.storage import MemoryStorage
 from squeakclient.squeaknode.node.rpc_blockchain import RPCBlockchain
 from squeakclient.squeaknode.node.rpc_lightning_client import RPCLightningClient
+from squeakclient.squeaknode.node.stores.memory.storage import MemoryStorage
 from squeakclient.squeaknode.rpc.route_guide_server import RouteGuideServicer
 
 

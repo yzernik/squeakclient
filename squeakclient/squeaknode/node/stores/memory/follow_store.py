@@ -1,8 +1,8 @@
 from typing import List
 
-from squeakclient.squeaknode.core.stores.follow_store import FollowStore
-
 from squeak.core.signing import CSqueakAddress
+
+from squeakclient.squeaknode.core.stores.follow_store import FollowStore
 
 
 class MemoryFollowStore(FollowStore):

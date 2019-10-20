@@ -1,14 +1,14 @@
 import logging
 import threading
 
-from squeakclient.squeaknode.core.stores.storage import Storage
-from squeakclient.squeaknode.node.peernode import PeerNode
-
 from squeak.core.signing import CSigningKey
 from squeak.core.signing import CSqueakAddress
 from squeak.messages import msg_getsqueaks
 from squeak.net import CInterested
 from squeak.net import CSqueakLocator
+
+from squeakclient.squeaknode.core.stores.storage import Storage
+from squeakclient.squeaknode.node.peernode import PeerNode
 
 
 logger = logging.getLogger(__name__)

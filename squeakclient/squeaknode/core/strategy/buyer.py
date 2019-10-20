@@ -1,8 +1,8 @@
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 from typing import List
 
 from bitcoin.net import CAddress
-
 from squeak.core import CSqueak
 from squeak.core.net import CInterested
 

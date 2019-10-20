@@ -2,16 +2,16 @@ import logging
 
 from squeak.messages import msg_addr
 from squeak.messages import msg_getaddr
-from squeak.messages import msg_pong
-from squeak.messages import msg_inv
 from squeak.messages import msg_getdata
-from squeak.messages import msg_squeak
+from squeak.messages import msg_inv
 from squeak.messages import msg_notfound
+from squeak.messages import msg_pong
+from squeak.messages import msg_squeak
 from squeak.net import CInv
 
-from squeakclient.squeaknode.node.peernode import PeerMessageHandler
-from squeakclient.squeaknode.node.access import SqueaksAccess
 from squeakclient.squeaknode.node.access import PeersAccess
+from squeakclient.squeaknode.node.access import SqueaksAccess
+from squeakclient.squeaknode.node.peernode import PeerMessageHandler
 
 
 logger = logging.getLogger(__name__)

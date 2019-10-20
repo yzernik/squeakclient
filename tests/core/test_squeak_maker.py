@@ -1,8 +1,8 @@
 import os
-import pytest
 
-from squeak.core import HASH_LENGTH
+import pytest
 from squeak.core import CheckSqueak
+from squeak.core import HASH_LENGTH
 from squeak.core.signing import CSigningKey
 
 from squeakclient.squeaknode.core.blockchain import Blockchain

@@ -1,7 +1,7 @@
-import socket
-import time
-import threading
 import logging
+import socket
+import threading
+import time
 
 import squeak.params
 

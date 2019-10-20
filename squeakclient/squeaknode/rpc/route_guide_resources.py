@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common resources used in the gRPC route guide example."""
-
 import json
 
 from squeakclient.squeaknode.rpc import route_guide_pb2

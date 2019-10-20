@@ -1,13 +1,11 @@
-import time
 import logging
-
+import time
 from io import BytesIO
 
 from bitcoin.core.serialize import SerializationTruncationError
 from bitcoin.net import CAddress
-
-from squeak.messages import MsgSerializable
 from squeak.messages import msg_ping
+from squeak.messages import MsgSerializable
 
 from squeakclient.squeaknode.util import generate_nonce
 

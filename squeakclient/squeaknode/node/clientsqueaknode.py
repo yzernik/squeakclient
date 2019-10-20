@@ -5,16 +5,16 @@ import time
 from squeak.messages import msg_getaddr
 from squeak.messages import msg_getsqueaks
 
-from squeakclient.squeaknode.node.access import PeersAccess
-from squeakclient.squeaknode.node.access import SigningKeyAccess
-from squeakclient.squeaknode.node.access import FollowsAccess
-from squeakclient.squeaknode.node.access import SqueaksAccess
 from squeakclient.squeaknode.core.blockchain import Blockchain
+from squeakclient.squeaknode.core.lightning_client import LightningClient
 from squeakclient.squeaknode.core.squeak_maker import SqueakMaker
 from squeakclient.squeaknode.core.stores.storage import Storage
+from squeakclient.squeaknode.node.access import FollowsAccess
+from squeakclient.squeaknode.node.access import PeersAccess
+from squeakclient.squeaknode.node.access import SigningKeyAccess
+from squeakclient.squeaknode.node.access import SqueaksAccess
 from squeakclient.squeaknode.node.handshakenode import HandshakeNode
 from squeakclient.squeaknode.node.squeaknode import ClientPeerMessageHandler
-from squeakclient.squeaknode.core.lightning_client import LightningClient
 
 
 UPDATE_THREAD_SLEEP_TIME = 10

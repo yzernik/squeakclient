@@ -1,6 +1,6 @@
 import os
-import pytest
 
+import pytest
 from squeak.core import HASH_LENGTH
 from squeak.core.signing import CSigningKey
 

@@ -1,8 +1,8 @@
 import time
 
 from squeak.core import CSqueak
-from squeak.core import MakeSqueak
 from squeak.core import HASH_LENGTH
+from squeak.core import MakeSqueak
 from squeak.core.signing import CSigningKey
 
 from squeakclient.squeaknode.core.blockchain import Blockchain

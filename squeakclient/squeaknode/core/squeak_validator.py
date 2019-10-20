@@ -1,9 +1,9 @@
-from squeak.core import CSqueak
-from squeak.core import CSqueakHeader
 from squeak.core import CheckSqueak
 from squeak.core import CheckSqueakError
 from squeak.core import CheckSqueakHeader
 from squeak.core import CheckSqueakHeaderError
+from squeak.core import CSqueak
+from squeak.core import CSqueakHeader
 
 from squeakclient.squeaknode.core.blockchain import Blockchain
 
