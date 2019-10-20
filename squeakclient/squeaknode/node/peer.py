@@ -33,7 +33,7 @@ class Peer(object):
         self.version = None
         self.sent_version = False
         self.handshake_complete = False
-        self.recv_data_buffer = BytesIO()
+        self.message_decoder = MessageDecoder()
         self.last_msg_revc_time = time_now
         self.sent_ping = None
         self.last_ping_time = time_now
@@ -57,32 +57,14 @@ class Peer(object):
         caddress.port = port
         return caddress
 
-    def read_data_buffer(self):
-        return self.recv_data_buffer.read()
-
-    def set_data_buffer(self, data):
-        if len(data) > MAX_MESSAGE_LEN:
-            raise Exception('Message size too large')
-        self.recv_data_buffer = BytesIO(data)
-
     def handle_recv_data(self, handle_msg_fn):
         recv_data = self.peer_socket.recv(SOCKET_READ_LEN)
         if not recv_data:
             raise Exception('Peer disconnected')
 
-        data = self.read_data_buffer() + recv_data
-        try:
-            while data:
-                self.set_data_buffer(data)
-                msg = MsgSerializable.stream_deserialize(self.recv_data_buffer)
-                if msg is None:
-                    raise Exception('Invalid data')
-                else:
-                    self.last_msg_revc_time = time.time()
-                    handle_msg_fn(msg, self)
-                    data = self.read_data_buffer()
-        except SerializationTruncationError:
-            self.set_data_buffer(data)
+        for msg in self.message_decoder.process_recv_data(recv_data):
+            self.last_msg_revc_time = time.time()
+            handle_msg_fn(msg, self)
 
     def close(self):
         logger.info("closing peer socket: {}".format(self.peer_socket))
@@ -139,3 +121,32 @@ class Peer(object):
 
     def __repr__(self):
         return "Peer(%s)" % (self.address_string)
+
+
+class MessageDecoder:
+
+    def __init__(self):
+        self.recv_data_buffer = BytesIO()
+
+    def process_recv_data(self, recv_data):
+        data = self.read_data_buffer() + recv_data
+        try:
+            while data:
+                self.set_data_buffer(data)
+                msg = MsgSerializable.stream_deserialize(self.recv_data_buffer)
+                if msg is None:
+                    raise Exception('Invalid data')
+                else:
+                    self.last_msg_revc_time = time.time()
+                    yield msg
+                    data = self.read_data_buffer()
+        except SerializationTruncationError:
+            self.set_data_buffer(data)
+
+    def read_data_buffer(self):
+        return self.recv_data_buffer.read()
+
+    def set_data_buffer(self, data):
+        if len(data) > MAX_MESSAGE_LEN:
+            raise Exception('Message size too large')
+        self.recv_data_buffer = BytesIO(data)
