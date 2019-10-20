@@ -56,7 +56,6 @@ services:
       - NETWORK
       - CHAIN
       - DEBUG
-      - RPC_LISTEN="0.0.0.0:10009"
     volumes:
       - shared_test:/rpc
       - lnd_dir_alice:/root/.lnd
@@ -76,7 +75,6 @@ services:
       - NETWORK
       - CHAIN
       - DEBUG
-      - RPC_LISTEN="0.0.0.0:10009"
     volumes:
       - shared_test:/rpc
       - lnd_dir_bob:/root/.lnd
@@ -96,7 +94,6 @@ services:
       - NETWORK
       - CHAIN
       - DEBUG
-      - RPC_LISTEN="0.0.0.0:10009"
     volumes:
       - shared_test:/rpc
       - lnd_dir_carol:/root/.lnd

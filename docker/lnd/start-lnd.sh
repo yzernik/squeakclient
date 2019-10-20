@@ -45,7 +45,6 @@ DEBUG=$(set_default "$DEBUG" "debug")
 NETWORK=$(set_default "$NETWORK" "simnet")
 CHAIN=$(set_default "$CHAIN" "bitcoin")
 BACKEND="btcd"
-RPC_LISTEN=$(set_default "$RPC_LISTEN" "localhost:10009")
 
 exec lnd \
     --noseedbackup \
@@ -57,8 +56,6 @@ exec lnd \
     "--$BACKEND.rpchost"="blockchain" \
     "--$BACKEND.rpcuser"="$RPCUSER" \
     "--$BACKEND.rpcpass"="$RPCPASS" \
-    --restlisten=0.0.0.0:8080 \
-    --rpclisten=127.0.0.1:10008 \
     --rpclisten=0.0.0.0:10009 \
     --debuglevel="$DEBUG" \
     --tlsextradomain=lnd \
