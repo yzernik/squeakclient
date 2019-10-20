@@ -155,10 +155,7 @@ class PeerManager(object):
         """Action to take when a new peer connection is made.
         """
         logger.debug('Starting handshake with {}'.format(peer))
-        version = self.peer_msg_handler.version_pkt(peer)
-        peer.my_version = version
-        self.send_msg(peer, version)
-        peer.sent_version = True
+        self.peer_msg_handler.initialize_handshake(peer)
 
     def connect_seed_peers(self):
         """Find more peers.
