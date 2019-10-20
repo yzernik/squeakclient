@@ -29,8 +29,8 @@ class Peer(object):
         time_now = int(time.time())
         self._peer_socket = peer_socket
         self._address = address
-        self.outgoing = outgoing
-        self.connect_time = time_now
+        self._outgoing = outgoing
+        self._connect_time = time_now
         self.my_version = None
         self.version = None
         self.sent_version = False
@@ -62,6 +62,14 @@ class Peer(object):
         caddress.ip = ip
         caddress.port = port
         return caddress
+
+    @property
+    def outgoing(self):
+        return self._outgoing
+
+    @property
+    def connect_time(self):
+        return self._connect_time
 
     def handle_recv_data(self, handle_msg_fn):
         recv_data = self._peer_socket.recv(SOCKET_READ_LEN)
