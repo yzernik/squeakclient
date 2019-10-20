@@ -112,6 +112,23 @@ def guide_add_peer(stub):
     print("Alice peers: %s" % alice_peers)
     assert 1 == len(alice_peers)
 
+def guide_generate_signing_key(stub):
+    request = route_guide_pb2.GenerateSigningKeyRequest()
+    response = stub.GenerateSigningKey(request)
+    address = response.address
+    print("Generated signing key with address: %s" % address)
+
+def guide_make_squeak(stub):
+    content = 'hello world!'
+    request = route_guide_pb2.MakeSqueakRequest(
+        content=content,
+    )
+    response = stub.MakeSqueak(request)
+    squeak = response.squeak
+    print("Made squeak: %s" % squeak)
+    assert 'hello world!' == squeak.content
+    assert 400 == squeak.block_height
+
 
 def run():
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
@@ -129,6 +146,10 @@ def run():
         guide_get_wallet_balance(stub)
         print("-------------- AddPeer --------------")
         guide_add_peer(stub)
+        print("-------------- GenerateSigningKey --------------")
+        guide_generate_signing_key(stub)
+        print("-------------- MakeSqueak --------------")
+        guide_make_squeak(stub)
 
 
 if __name__ == '__main__':

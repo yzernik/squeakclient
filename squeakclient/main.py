@@ -15,7 +15,6 @@ from squeakclient.squeaknode.node.clientsqueaknode import ClientSqueakNode
 from squeakclient.squeaknode.node.stores.memory.storage import MemoryStorage
 from squeakclient.squeaknode.node.rpc_blockchain import RPCBlockchain
 from squeakclient.squeaknode.node.rpc_lightning_client import RPCLightningClient
-from squeakclient.squeaknode.node.rpc import RPCServer
 from squeakclient.squeaknode.rpc.route_guide_server import RouteGuideServicer
 
 
@@ -48,23 +47,6 @@ def _start_node(rpc_host, rpc_user, rpc_pass):
     thread.daemon = True
     thread.start()
     return node, thread
-
-
-def _start_rpc_server(node, port, rpc_user, rpc_pass):
-    port = port or squeak.params.params.RPC_PORT
-    rpc_server = RPCServer(
-        node,
-        port,
-        rpc_user,
-        rpc_pass,
-    )
-    thread = threading.Thread(
-        target=rpc_server.start,
-        args=(),
-    )
-    thread.daemon = True
-    thread.start()
-    return rpc_server, thread
 
 
 def _start_route_guide_rpc_server(node):
@@ -181,7 +163,6 @@ def main():
     node, thread = _start_node(rpc_host, rpc_user, rpc_pass)
 
     # start rpc server
-    rpc_server, rpc_server_thread = _start_rpc_server(node, args.rpcport, args.rpcuser, args.rpcpass)
     route_guide_server, route_guide_server_thread = _start_route_guide_rpc_server(node)
 
     while True:

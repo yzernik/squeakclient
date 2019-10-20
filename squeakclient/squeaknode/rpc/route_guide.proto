@@ -62,10 +62,18 @@ service RouteGuide {
   */
   rpc AddPeer (AddPeerRequest) returns (AddPeerResponse) {}
 
-  /** lncli: `listpeers`
+  /** sqk: `listpeers`
   ListPeers returns a verbose listing of all currently active peers.
   */
   rpc ListPeers (ListPeersRequest) returns (ListPeersResponse) {}
+
+  /** sqk: `makesqueak`
+  */
+  rpc MakeSqueak (MakeSqueakRequest) returns (MakeSqueakResponse) {}
+
+  /** sqk: `generatesigningKey`
+  */
+  rpc GenerateSigningKey (GenerateSigningKeyRequest) returns (GenerateSigningKeyResponse) {}
 }
 
 // Points are represented as latitude-longitude pairs in the E7 representation
@@ -170,6 +178,23 @@ message ListPeersResponse {
     repeated Peer peers = 1 [json_name = "peers"];
 }
 
+message MakeSqueakRequest {
+    /// Content of the squeak to be made.
+    string content = 1 [json_name = "content"];
+}
+
+message MakeSqueakResponse {
+    /// The squeak.
+    Squeak squeak = 1 [json_name = "squeak"];
+}
+
+message GenerateSigningKeyRequest {}
+
+message GenerateSigningKeyResponse {
+    /// Address of the signing key.
+    string address = 1 [json_name = "address"];
+}
+
 message Addr {
   string host = 1;
 }
@@ -198,4 +223,21 @@ message Peer {
 
     /// Ping time to this peer
     int64 ping_time = 8 [json_name = "ping_time"];
+}
+
+message Squeak {
+    /// Hash of the squeak.
+    bytes hash = 1 [json_name = "hash"];
+
+    /// Address of the creator.
+    string address = 2 [json_name = "address"];
+
+    /// Content of the squeak.
+    string content = 3 [json_name = "content"];
+
+    /// Block height of the squeak.
+    uint64 block_height = 4 [json_name = "block_height"];
+
+    /// Timestamp of the squeak.
+    uint64 timestamp = 5 [json_name = "timestamp"];
 }

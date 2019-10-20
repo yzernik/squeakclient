@@ -3,6 +3,4 @@ argparse
 googleapis-common-protos
 grpcio
 grpcio-tools
-json-rpc==1.11.1
 requests
-werkzeug
