@@ -97,7 +97,7 @@ class PeerManager(object):
             try:
                 peer.handle_recv_data(self.handle_msg)
             except Exception:
-                peer.peer_socket.close()
+                peer.close()
                 with self.peers_lock:
                     del self.peers[peer.address]
                     logger.debug('Removed peer {}'.format(peer))

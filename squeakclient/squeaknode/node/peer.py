@@ -27,7 +27,7 @@ class Peer(object):
 
     def __init__(self, peer_socket, address, outgoing=False):
         time_now = int(time.time())
-        self.peer_socket = peer_socket
+        self._peer_socket = peer_socket
         self.address = address
         self.outgoing = outgoing
         self.connect_time = time_now
@@ -60,7 +60,7 @@ class Peer(object):
         return caddress
 
     def handle_recv_data(self, handle_msg_fn):
-        recv_data = self.peer_socket.recv(SOCKET_READ_LEN)
+        recv_data = self._peer_socket.recv(SOCKET_READ_LEN)
         if not recv_data:
             raise Exception('Peer disconnected')
 
@@ -69,14 +69,14 @@ class Peer(object):
             handle_msg_fn(msg, self)
 
     def close(self):
-        logger.info("closing peer socket: {}".format(self.peer_socket))
-        if self.peer_socket:
-            self.peer_socket.close()
+        logger.info("closing peer socket: {}".format(self._peer_socket))
+        if self._peer_socket:
+            self._peer_socket.close()
 
     def send_msg(self, msg):
         logger.debug('Sending message of type {}'.format(msg.command))
         data = msg.to_bytes()
-        self.peer_socket.send(data)
+        self._peer_socket.send(data)
 
     def health_check(self):
         # Disconnect peers without handshake
