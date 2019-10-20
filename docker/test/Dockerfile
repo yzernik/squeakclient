@@ -4,8 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
 	python3-pip \
 	curl \
-	git \
-	expect
+	git
 
 COPY requirements.txt /
 
@@ -20,7 +19,6 @@ RUN cp -r googleapis /app
 
 WORKDIR /app
 
-# RUN python3 -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. squeakclient/rpc.proto
 RUN python3 -m grpc_tools.protoc --proto_path=googleapis:. --python_out=. --grpc_python_out=. route_guide.proto
 
 # Copy the entrypoint script.
