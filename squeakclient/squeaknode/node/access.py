@@ -3,7 +3,6 @@ import threading
 
 from squeak.core.signing import CSigningKey
 from squeak.core.signing import CSqueakAddress
-from squeak.messages import msg_getsqueaks
 from squeak.net import CInterested
 from squeak.net import CSqueakLocator
 
@@ -77,11 +76,6 @@ class FollowsAccess(object):
         """Get the squeak locator message to locate squeaks from other peers."""
         return self.storage.get_follow_store().get_follows()
 
-    def find_squeaks(self):
-        locator = self.get_follow_locator()
-        getsqueaks = msg_getsqueaks(locator=locator)
-        self.peer_node.broadcast_msg(getsqueaks)
-
     def get_follow_locator(self):
         follows = self.storage.get_follow_store().get_follows()
         interesteds = [CInterested(address=follow)
@@ -122,31 +116,31 @@ class SqueaksAccess(object):
 
 class PeersAccess(object):
 
-    def __init__(self, peer_node: PeerManager) -> None:
-        self.peer_node = peer_node
+    def __init__(self, peer_manager: PeerManager) -> None:
+        self.peer_manager = peer_manager
 
     def send_msg(self, peer, msg):
-        self.peer_node.send_msg(peer, msg)
+        self.peer_manager.send_msg(peer, msg)
 
     def broadcast_msg(self, msg):
-        self.peer_node.broadcast_msg(msg)
+        self.peer_manager.broadcast_msg(msg)
 
     def connect_host(self, host):
-        self.peer_node.connect_host(host)
+        self.peer_manager.connect_host(host)
 
     def add_address(self, address):
-        self.peer_node.add_address(address)
+        self.peer_manager.add_address(address)
 
     def get_connected_peers(self):
-        return self.peer_node.get_connected_peers()
+        return self.peer_manager.get_connected_peers()
 
     def listen_peers_changed(self, callback):
-        self.peer_node.listen_peers_changed(callback)
+        self.peer_manager.listen_peers_changed(callback)
 
     def get_peer_nonces(self):
-        peers = list(self.peer_node.peers.values())
+        peers = list(self.peer_manager.peers.values())
         return [peer.my_version.nNonce if peer.my_version else None
                 for peer in peers]
 
     def get_local_ip_port(self):
-        return self.peer_node.ip, self.peer_node.port
+        return self.peer_manager.ip, self.peer_manager.port

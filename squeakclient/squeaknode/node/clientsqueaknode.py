@@ -31,8 +31,8 @@ class ClientSqueakNode(object):
         self.storage = storage
         self.blockchain = blockchain
         self.lightning_client = lightning_client
-        self.peer_node = PeerManager()
-        self.peers_access = PeersAccess(self.peer_node)
+        self.peer_manager = PeerManager()
+        self.peers_access = PeersAccess(self.peer_manager)
         self.signing_key_access = SigningKeyAccess(self.storage)
         self.follows_access = FollowsAccess(self.storage)
         self.squeaks_access = SqueaksAccess(self.storage)
@@ -40,7 +40,7 @@ class ClientSqueakNode(object):
 
     def start(self):
         # Start network node
-        self.peer_node.start(
+        self.peer_manager.start(
             self.peer_msg_handler,
         )
 
@@ -104,7 +104,7 @@ class ClientSqueakNode(object):
     def find_squeaks(self):
         locator = self.follows_access.get_follow_locator()
         getsqueaks = msg_getsqueaks(locator=locator)
-        self.peer_node.broadcast_msg(getsqueaks)
+        self.peer_manager.broadcast_msg(getsqueaks)
 
     def connect_host(self, host):
         self.peers_access.connect_host(host)
@@ -117,8 +117,8 @@ class ClientSqueakNode(object):
 
     def find_more_peers(self):
         peers = self.get_peers()
-        if len(peers) < self.peers_access.peer_node.min_peers:
-            self.peer_node.broadcast_msg(msg_getaddr())
+        if len(peers) < self.peers_access.peer_manager.min_peers:
+            self.peer_manager.broadcast_msg(msg_getaddr())
 
     def get_wallet_balance(self):
         return self.lightning_client.get_wallet_balance()
