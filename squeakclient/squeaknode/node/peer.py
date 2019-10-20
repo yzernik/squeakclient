@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 class Peer(object):
+    """Maintains the internal state of a peer connection.
+    """
 
     def __init__(self, peer_socket, address, outgoing=False):
         time_now = int(time.time())
@@ -124,6 +126,8 @@ class Peer(object):
 
 
 class MessageDecoder:
+    """Handles the incoming binary data from a peer and buffers and decodes.
+    """
 
     def __init__(self):
         self.recv_data_buffer = BytesIO()
