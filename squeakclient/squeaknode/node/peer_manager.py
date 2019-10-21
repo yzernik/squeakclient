@@ -96,8 +96,9 @@ class PeerManager(object):
         while True:
             try:
                 peer.handle_recv_data(self.handle_msg)
-            except Exception:
-                peer.peer_socket.close()
+            except Exception as e:
+                logger.debug('Error in handle_peer: {}'.format(e))
+                peer.close()
                 with self.peers_lock:
                     del self.peers[peer.address]
                     logger.debug('Removed peer {}'.format(peer))
@@ -155,10 +156,7 @@ class PeerManager(object):
         """Action to take when a new peer connection is made.
         """
         logger.debug('Starting handshake with {}'.format(peer))
-        version = self.peer_msg_handler.version_pkt(peer)
-        peer.my_version = version
-        self.send_msg(peer, version)
-        peer.sent_version = True
+        self.peer_msg_handler.initialize_handshake(peer)
 
     def connect_seed_peers(self):
         """Find more peers.
@@ -168,8 +166,11 @@ class PeerManager(object):
 
     def get_connected_peers(self):
         peers = list(self.peers.values())
-        return [peer for peer in peers
-                if peer.handshake_complete]
+        return [
+            peer
+            for peer in peers
+            if peer.handshake_complete
+        ]
 
 
 def resolve_hostname(hostname):

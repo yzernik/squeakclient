@@ -35,8 +35,16 @@ class PeerMessageHandler():
         self.peers_access = peers_access
         self.squeaks_access = squeaks_access
 
-    def initialize_peer(self, peer):
-        logger.debug('Initializing peer connection with {}'.format(peer))
+    def initialize_handshake(self, peer):
+        """Action to take upon completion of handshake with a peer."""
+        logger.debug('Starting handshake with {}'.format(peer))
+        version = self.version_pkt(peer)
+        peer.set_local_version(version)
+        self.peers_access.send_msg(peer, version)
+
+    def on_handshake_complete(self, peer):
+        """Action to take upon completion of handshake with a peer."""
+        logger.debug('Initializing post-handshake connection with {}'.format(peer))
         peer.send_ping()
         if peer.outgoing:
             self.peers_access.send_msg(peer, msg_getaddr())
@@ -52,10 +60,6 @@ class PeerMessageHandler():
         msg.addrFrom.port = local_port
         msg.nNonce = generate_nonce()
         return msg
-
-    def initialize_connection(self, peer):
-        logger.debug('Initializing connection with {}'.format(peer))
-        self.initialize_peer(peer)
 
     def handle_peer_message(self, msg, peer):
         """Handle messages from a peer with completed handshake."""
@@ -92,31 +96,31 @@ class PeerMessageHandler():
 
     def handle_version(self, msg, peer):
         logger.debug('Handling version message from peer {}'.format(peer))
-        if msg.nNonce in self.peers_access.get_peer_nonces():
+        if msg.nNonce in self.peers_access.get_local_version_nonces():
             logger.debug('Closing connection because of matching nonce with peer {}'.format(peer))
             peer.close()
             return
 
-        peer.version = msg
-        if not peer.sent_version:
+        peer.set_remote_version(msg)
+        if peer.local_version is None:
             version = self.version_pkt(peer)
-            peer.my_version = version
+            peer.set_local_version(version)
             self.peers_access.send_msg(peer, version)
-            peer.sent_version = True
         self.peers_access.send_msg(peer, msg_verack())
 
     def handle_verack(self, msg, peer):
         logger.debug('Handling verack message from peer {}'.format(peer))
-        if peer.version is not None and peer.sent_version:
-            peer.handshake_complete = True
+        if peer.remote_version is not None and peer.local_version is not None:
+            peer.set_handshake_complete(True)
             # self.on_peers_changed()  # TODO: call on_peers_changed inside set_handshake_complete method.
             logger.debug('Handshake complete with {}'.format(peer))
-            self.initialize_connection(peer)
+            self.on_handshake_complete(peer)
 
     def handle_ping(self, msg, peer):
         nonce = msg.nonce
         pong = msg_pong()
         pong.nonce = nonce
+        peer.set_last_recv_ping_time()
         self.peers_access.send_msg(peer, pong)
 
     def handle_pong(self, msg, peer):

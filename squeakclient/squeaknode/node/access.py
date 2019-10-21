@@ -137,9 +137,9 @@ class PeersAccess(object):
     def listen_peers_changed(self, callback):
         self.peer_manager.listen_peers_changed(callback)
 
-    def get_peer_nonces(self):
+    def get_local_version_nonces(self):
         peers = list(self.peer_manager.peers.values())
-        return [peer.my_version.nNonce if peer.my_version else None
+        return [peer.local_version.nNonce if peer.local_version else None
                 for peer in peers]
 
     def get_local_ip_port(self):
