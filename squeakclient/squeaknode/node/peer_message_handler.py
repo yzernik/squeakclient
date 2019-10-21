@@ -5,6 +5,7 @@ from squeak.messages import msg_getaddr
 from squeak.messages import msg_getdata
 from squeak.messages import msg_inv
 from squeak.messages import msg_notfound
+from squeak.messages import msg_ping
 from squeak.messages import msg_pong
 from squeak.messages import msg_squeak
 from squeak.messages import msg_verack
@@ -45,9 +46,18 @@ class PeerMessageHandler():
     def on_handshake_complete(self, peer):
         """Action to take upon completion of handshake with a peer."""
         logger.debug('Initializing post-handshake connection with {}'.format(peer))
-        peer.send_ping()
+        self.initiate_ping(peer)
         if peer.outgoing:
             self.peers_access.send_msg(peer, msg_getaddr())
+
+    def initiate_ping(self, peer):
+        """Send a ping message and expect a pong response."""
+        logger.debug('Sending a ping to {}'.format(peer))
+        nonce = generate_nonce()
+        ping = msg_ping()
+        ping.nonce = nonce
+        self.peers_access.send_msg(peer, ping)
+        peer.set_last_sent_ping(nonce)
 
     def version_pkt(self, peer):
         msg = msg_version()
@@ -120,7 +130,7 @@ class PeerMessageHandler():
         nonce = msg.nonce
         pong = msg_pong()
         pong.nonce = nonce
-        peer.set_last_recv_ping_time()
+        peer.set_last_recv_ping()
         self.peers_access.send_msg(peer, pong)
 
     def handle_pong(self, msg, peer):

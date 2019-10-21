@@ -44,7 +44,19 @@ class PeerManager(object):
         while True:
             # Disconnect from unhealthy peers
             for peer in list(self.peers.values()):
-                peer.health_check()
+                if peer.has_handshake_timeout():
+                    logger.info('Closing peer because of handshake timeout {}'.format(peer))
+                    peer.close()
+                if peer.has_inactive_timeout():
+                    logger.info('Closing peer because of last message timeout {}'.format(peer))
+                    peer.close()
+                if peer.has_ping_timeout():
+                    logger.info('Closing peer because of ping timeout {}'.format(peer))
+                    peer.close()
+
+                # Check if it's time to send a ping.
+                if peer.is_time_for_ping():
+                    self.peer_msg_handler.initiate_ping(peer)
 
             # Connect to more peers
             if len(self.get_connected_peers()) == 0:
