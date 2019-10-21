@@ -120,6 +120,7 @@ class PeerMessageHandler():
         nonce = msg.nonce
         pong = msg_pong()
         pong.nonce = nonce
+        peer.set_last_recv_ping_time()
         self.peers_access.send_msg(peer, pong)
 
     def handle_pong(self, msg, peer):

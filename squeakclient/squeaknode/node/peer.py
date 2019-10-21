@@ -38,6 +38,7 @@ class Peer(object):
         self._last_msg_revc_time = time_now
         self._last_sent_ping_nonce = None
         self._last_sent_ping_time = time_now
+        self._last_recv_ping_time = time_now
 
     @property
     def nVersion(self):
@@ -91,6 +92,22 @@ class Peer(object):
 
     def set_handshake_complete(self, handshake_complete):
         self._handshake_complete = handshake_complete
+
+    @property
+    def last_msg_revc_time(self):
+        return self._last_msg_revc_time
+
+    @property
+    def last_sent_ping_time(self):
+        return self._last_sent_ping_time
+
+    @property
+    def last_recv_ping_time(self):
+        return self._last_recv_ping_time
+
+    def set_last_recv_ping_time(self, timestamp=None):
+        timestamp = timestamp or time.time()
+        self._last_recv_ping_time = timestamp
 
     def handle_recv_data(self, handle_msg_fn):
         recv_data = self._peer_socket.recv(SOCKET_READ_LEN)
