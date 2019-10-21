@@ -4,10 +4,7 @@ from io import BytesIO
 
 from bitcoin.core.serialize import SerializationTruncationError
 from bitcoin.net import CAddress
-from squeak.messages import msg_ping
 from squeak.messages import MsgSerializable
-
-from squeakclient.squeaknode.util import generate_nonce
 
 
 MAX_MESSAGE_LEN = 1048576
@@ -101,11 +98,16 @@ class Peer(object):
     def last_sent_ping_time(self):
         return self._last_sent_ping_time
 
+    def set_last_sent_ping(self, nonce, timestamp=None):
+        timestamp = timestamp or time.time()
+        self._last_sent_ping_nonce = nonce
+        self._last_sent_ping_time = time.time()
+
     @property
     def last_recv_ping_time(self):
         return self._last_recv_ping_time
 
-    def set_last_recv_ping_time(self, timestamp=None):
+    def set_last_recv_ping(self, timestamp=None):
         timestamp = timestamp or time.time()
         self._last_recv_ping_time = timestamp
 
@@ -128,48 +130,40 @@ class Peer(object):
         data = msg.to_bytes()
         self._peer_socket.send(data)
 
-    def health_check(self):
-        # Check if handshake timed out.
-        self.check_handshake_timeout()
-        # Check for peer is inactive.
-        self.check_inactive()
-        # Check for ping timeouts
-        self.check_ping_timeout()
-
-    def check_handshake_timeout(self):
+    def has_handshake_timeout(self):
+        """Return True if the handshake has timed out."""
         if not self._handshake_complete:
             if time.time() - self._connect_time > HANDSHAKE_TIMEOUT:
-                logger.info('Closing peer because of handshake timeout {}'.format(self))
-                self.close()
+                # logger.info('Closing peer because of handshake timeout {}'.format(self))
+                return True
+        return False
 
-    def check_inactive(self):
+    def has_inactive_timeout(self):
+        """Return True if the last message received time has timed out."""
         if self._last_msg_revc_time:
             if time.time() - self._last_msg_revc_time > LAST_MESSAGE_TIMEOUT:
-                logger.info('Closing peer because of last message timeout {}'.format(self))
-                self.close()
+                # logger.info('Closing peer because of last message timeout {}'.format(self))
+                return True
+        return False
 
-    def check_ping_timeout(self):
+    def has_ping_timeout(self):
+        """Return True if the ping has timed out."""
         last_sent_ping_nonce = self._last_sent_ping_nonce
         last_sent_ping_time = self._last_sent_ping_time
 
         if last_sent_ping_nonce and last_sent_ping_time:
             if time.time() - last_sent_ping_time > PING_TIMEOUT:
-                logger.info('Closing peer because of ping timeout {}'.format(self))
-                self.close()
-                return
+                # logger.info('Closing peer because of ping timeout {}'.format(self))
+                return True
+        return False
+
+    def is_time_for_ping(self):
+        """Return True if a ping message needs to be sent."""
+        last_sent_ping_time = self._last_sent_ping_time
 
         if last_sent_ping_time is None or \
            time.time() - last_sent_ping_time > PING_INTERVAL:
-            self.send_ping()
-
-    def send_ping(self):
-        nonce = generate_nonce()
-        sent_time = time.time()
-        ping = msg_ping()
-        ping.nonce = nonce
-        self.send_msg(ping)
-        self._last_sent_ping_nonce = nonce
-        self._last_sent_ping_time = sent_time
+            return True
 
     def handle_pong(self, pong):
         if pong.nonce == self._last_sent_ping_nonce:
