@@ -32,7 +32,7 @@ class Peer(object):
         self._remote_version = None
         self._handshake_complete = False
         self._message_decoder = MessageDecoder()
-        self._last_msg_revc_time = None
+        self._last_msg_revc_time = time_now
         self._last_sent_ping_nonce = None
         self._last_sent_ping_time = None
         self._last_recv_ping_time = None
@@ -132,38 +132,32 @@ class Peer(object):
 
     def has_handshake_timeout(self):
         """Return True if the handshake has timed out."""
-        if not self._handshake_complete:
-            if time.time() - self._connect_time > HANDSHAKE_TIMEOUT:
-                # logger.info('Closing peer because of handshake timeout {}'.format(self))
-                return True
-        return False
+        if self._handshake_complete:
+            return False
+        return time.time() - self._connect_time > HANDSHAKE_TIMEOUT
 
     def has_inactive_timeout(self):
         """Return True if the last message received time has timed out."""
-        if self._last_msg_revc_time:
-            if time.time() - self._last_msg_revc_time > LAST_MESSAGE_TIMEOUT:
-                # logger.info('Closing peer because of last message timeout {}'.format(self))
-                return True
-        return False
+        if self._last_msg_revc_time is None:
+            return False
+        return time.time() - self._last_msg_revc_time > LAST_MESSAGE_TIMEOUT
 
     def has_ping_timeout(self):
         """Return True if the ping has timed out."""
         last_sent_ping_nonce = self._last_sent_ping_nonce
         last_sent_ping_time = self._last_sent_ping_time
-
-        if last_sent_ping_nonce and last_sent_ping_time:
-            if time.time() - last_sent_ping_time > PING_TIMEOUT:
-                # logger.info('Closing peer because of ping timeout {}'.format(self))
-                return True
-        return False
+        if last_sent_ping_nonce is None:
+            return False
+        if last_sent_ping_time is None:
+            return False
+        return time.time() - last_sent_ping_time > PING_TIMEOUT
 
     def is_time_for_ping(self):
         """Return True if a ping message needs to be sent."""
         last_sent_ping_time = self._last_sent_ping_time
-
-        if last_sent_ping_time is None or \
-           time.time() - last_sent_ping_time > PING_INTERVAL:
+        if last_sent_ping_time is None:
             return True
+        return time.time() - last_sent_ping_time > PING_INTERVAL
 
     def handle_pong(self, pong):
         if pong.nonce == self._last_sent_ping_nonce:
