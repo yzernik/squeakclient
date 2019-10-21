@@ -33,7 +33,7 @@ class Peer(object):
         self._connect_time = time_now
         self._local_version = None
         self._remote_version = None
-        self.handshake_complete = False
+        self._handshake_complete = False
         self.message_decoder = MessageDecoder()
         self.last_msg_revc_time = time_now
         self.sent_ping = None
@@ -85,6 +85,13 @@ class Peer(object):
     def set_remote_version(self, version):
         self._remote_version = version
 
+    @property
+    def handshake_complete(self):
+        return self._handshake_complete
+
+    def set_handshake_complete(self, handshake_complete):
+        self._handshake_complete = handshake_complete
+
     def handle_recv_data(self, handle_msg_fn):
         recv_data = self._peer_socket.recv(SOCKET_READ_LEN)
         if not recv_data:
@@ -106,7 +113,7 @@ class Peer(object):
 
     def health_check(self):
         # Disconnect peers without handshake
-        if not self.handshake_complete:
+        if not self._handshake_complete:
             if time.time() - self.connect_time > HANDSHAKE_TIMEOUT:
                 logger.info('Closing peer because of handshake timeout {}'.format(self))
                 self.close()

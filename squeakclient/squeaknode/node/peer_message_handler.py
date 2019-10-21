@@ -111,7 +111,7 @@ class PeerMessageHandler():
     def handle_verack(self, msg, peer):
         logger.debug('Handling verack message from peer {}'.format(peer))
         if peer.remote_version is not None and peer.local_version is not None:
-            peer.handshake_complete = True
+            peer.set_handshake_complete(True)
             # self.on_peers_changed()  # TODO: call on_peers_changed inside set_handshake_complete method.
             logger.debug('Handshake complete with {}'.format(peer))
             self.on_handshake_complete(peer)

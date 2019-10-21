@@ -166,8 +166,11 @@ class PeerManager(object):
 
     def get_connected_peers(self):
         peers = list(self.peers.values())
-        return [peer for peer in peers
-                if peer.handshake_complete]
+        return [
+            peer
+            for peer in peers
+            if peer.handshake_complete
+        ]
 
 
 def resolve_hostname(hostname):
