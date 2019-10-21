@@ -34,8 +34,8 @@ class Peer(object):
         self._local_version = None
         self._remote_version = None
         self._handshake_complete = False
-        self.message_decoder = MessageDecoder()
-        self.last_msg_revc_time = time_now
+        self._message_decoder = MessageDecoder()
+        self._last_msg_revc_time = time_now
         self.sent_ping = None
         self.last_ping_time = time_now
 
@@ -97,8 +97,8 @@ class Peer(object):
         if not recv_data:
             raise Exception('Peer disconnected')
 
-        for msg in self.message_decoder.process_recv_data(recv_data):
-            self.last_msg_revc_time = time.time()
+        for msg in self._message_decoder.process_recv_data(recv_data):
+            self._last_msg_revc_time = time.time()
             handle_msg_fn(msg, self)
 
     def close(self):
@@ -120,7 +120,7 @@ class Peer(object):
                 return
 
         # Check for inactive peers
-        if time.time() - self.last_msg_revc_time > LAST_MESSAGE_TIMEOUT:
+        if time.time() - self._last_msg_revc_time > LAST_MESSAGE_TIMEOUT:
             logger.info('Closing peer because of last message timeout {}'.format(self))
             self.close()
             return
@@ -174,7 +174,6 @@ class MessageDecoder:
                 if msg is None:
                     raise Exception('Invalid data')
                 else:
-                    self.last_msg_revc_time = time.time()
                     yield msg
                     data = self.read_data_buffer()
         except SerializationTruncationError:
