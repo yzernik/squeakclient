@@ -36,8 +36,8 @@ class Peer(object):
         self._handshake_complete = False
         self._message_decoder = MessageDecoder()
         self._last_msg_revc_time = time_now
-        self._sent_ping = None
-        self._last_ping_time = time_now
+        self._last_sent_ping_nonce = None
+        self._last_sent_ping_time = time_now
 
     @property
     def nVersion(self):
@@ -112,30 +112,35 @@ class Peer(object):
         self._peer_socket.send(data)
 
     def health_check(self):
-        # Disconnect peers without handshake
+        # Check if handshake timed out.
+        self.check_handshake_timeout()
+        # Check for peer is inactive.
+        self.check_inactive()
+        # Check for ping timeouts
+        self.check_ping_timeout()
+
+    def check_handshake_timeout(self):
         if not self._handshake_complete:
-            if time.time() - self.connect_time > HANDSHAKE_TIMEOUT:
+            if time.time() - self._connect_time > HANDSHAKE_TIMEOUT:
                 logger.info('Closing peer because of handshake timeout {}'.format(self))
                 self.close()
-                return
 
-        # Check for inactive peers
+    def check_inactive(self):
         if time.time() - self._last_msg_revc_time > LAST_MESSAGE_TIMEOUT:
             logger.info('Closing peer because of last message timeout {}'.format(self))
             self.close()
-            return
 
-        # Check for ping timeouts
-        _sent_ping = self._sent_ping
-        if _sent_ping:
-            (nonce, sent_time) = _sent_ping
-            if time.time() - sent_time > PING_TIMEOUT:
+    def check_ping_timeout(self):
+        _last_sent_ping_nonce = self._last_sent_ping_nonce
+        _last_sent_ping_time = self._last_sent_ping_time
+
+        if _last_sent_ping_nonce:
+            if time.time() - _last_sent_ping_time > PING_TIMEOUT:
                 logger.info('Closing peer because of ping timeout {}'.format(self))
                 self.close()
                 return
 
-        # Check for pings that should be sent
-        if time.time() - self._last_ping_time > PING_INTERVAL:
+        if time.time() - _last_sent_ping_time > PING_INTERVAL:
             self.send_ping()
 
     def send_ping(self):
@@ -144,15 +149,12 @@ class Peer(object):
         ping = msg_ping()
         ping.nonce = nonce
         self.send_msg(ping)
-        self._sent_ping = (nonce, sent_time)
-        self._last_ping_time = sent_time
+        self._last_sent_ping_nonce = nonce
+        self._last_sent_ping_time = sent_time
 
     def handle_pong(self, pong):
-        _sent_ping = self._sent_ping
-        if _sent_ping:
-            (nonce, sent_time) = _sent_ping
-            if pong.nonce == nonce:
-                self._sent_ping = None
+        if pong.nonce == self._last_sent_ping_nonce:
+            self._last_sent_ping_nonce = None
 
     def __repr__(self):
         return "Peer(%s)" % (self.address_string)
