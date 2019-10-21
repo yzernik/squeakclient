@@ -99,6 +99,7 @@ class Peer(object):
         return self._last_sent_ping_time
 
     def set_last_sent_ping(self, nonce, timestamp=None):
+        logger.debug('Setting last ping sent with nonce {}'.format(nonce))
         timestamp = timestamp or time.time()
         self._last_sent_ping_nonce = nonce
         self._last_sent_ping_time = time.time()
@@ -159,8 +160,10 @@ class Peer(object):
             return True
         return time.time() - last_sent_ping_time > PING_INTERVAL
 
-    def handle_pong(self, pong):
-        if pong.nonce == self._last_sent_ping_nonce:
+    def set_pong_response(self, nonce):
+        """Update the status of the peer with the nonce from a pong message."""
+        logger.debug('Setting pong response with nonce {}'.format(nonce))
+        if nonce == self._last_sent_ping_nonce:
             self._last_sent_ping_nonce = None
 
     def __repr__(self):

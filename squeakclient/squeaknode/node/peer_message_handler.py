@@ -134,7 +134,7 @@ class PeerMessageHandler():
         self.peers_access.send_msg(peer, pong)
 
     def handle_pong(self, msg, peer):
-        peer.handle_pong(msg)
+        peer.set_pong_response(msg.nonce)
 
     def handle_addr(self, msg, peer):
         for addr in msg.addrs:
