@@ -32,7 +32,7 @@ class Peer(object):
         self._outgoing = outgoing
         self._connect_time = time_now
         self._local_version = None
-        self.version = None
+        self._remote_version = None
         self.handshake_complete = False
         self.message_decoder = MessageDecoder()
         self.last_msg_revc_time = time_now
@@ -41,8 +41,9 @@ class Peer(object):
 
     @property
     def nVersion(self):
-        if self.version:
-            return self.version.nVersion
+        remote_version = self._remote_version
+        if remote_version:
+            return remote_version.nVersion
 
     @property
     def address(self):
@@ -76,6 +77,13 @@ class Peer(object):
 
     def set_local_version(self, version):
         self._local_version = version
+
+    @property
+    def remote_version(self):
+        return self._remote_version
+
+    def set_remote_version(self, version):
+        self._remote_version = version
 
     def handle_recv_data(self, handle_msg_fn):
         recv_data = self._peer_socket.recv(SOCKET_READ_LEN)
