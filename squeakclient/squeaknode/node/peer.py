@@ -31,9 +31,8 @@ class Peer(object):
         self._address = address
         self._outgoing = outgoing
         self._connect_time = time_now
-        self.my_version = None
+        self._local_version = None
         self.version = None
-        self.sent_version = False
         self.handshake_complete = False
         self.message_decoder = MessageDecoder()
         self.last_msg_revc_time = time_now
@@ -70,6 +69,13 @@ class Peer(object):
     @property
     def connect_time(self):
         return self._connect_time
+
+    @property
+    def local_version(self):
+        return self._local_version
+
+    def set_local_version(self, version):
+        self._local_version = version
 
     def handle_recv_data(self, handle_msg_fn):
         recv_data = self._peer_socket.recv(SOCKET_READ_LEN)

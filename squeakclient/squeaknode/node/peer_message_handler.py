@@ -39,9 +39,8 @@ class PeerMessageHandler():
         """Action to take upon completion of handshake with a peer."""
         logger.debug('Starting handshake with {}'.format(peer))
         version = self.version_pkt(peer)
-        peer.my_version = version
+        peer.set_local_version(version)
         self.peers_access.send_msg(peer, version)
-        peer.sent_version = True
 
     def on_handshake_complete(self, peer):
         """Action to take upon completion of handshake with a peer."""
@@ -97,22 +96,21 @@ class PeerMessageHandler():
 
     def handle_version(self, msg, peer):
         logger.debug('Handling version message from peer {}'.format(peer))
-        if msg.nNonce in self.peers_access.get_peer_nonces():
+        if msg.nNonce in self.peers_access.get_local_version_nonces():
             logger.debug('Closing connection because of matching nonce with peer {}'.format(peer))
             peer.close()
             return
 
         peer.version = msg
-        if not peer.sent_version:
+        if peer.local_version is None:
             version = self.version_pkt(peer)
-            peer.my_version = version
+            peer.set_local_version(version)
             self.peers_access.send_msg(peer, version)
-            peer.sent_version = True
         self.peers_access.send_msg(peer, msg_verack())
 
     def handle_verack(self, msg, peer):
         logger.debug('Handling verack message from peer {}'.format(peer))
-        if peer.version is not None and peer.sent_version:
+        if peer.version is not None and peer.local_version is not None:
             peer.handshake_complete = True
             # self.on_peers_changed()  # TODO: call on_peers_changed inside set_handshake_complete method.
             logger.debug('Handshake complete with {}'.format(peer))

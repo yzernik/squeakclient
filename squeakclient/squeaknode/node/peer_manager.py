@@ -96,7 +96,8 @@ class PeerManager(object):
         while True:
             try:
                 peer.handle_recv_data(self.handle_msg)
-            except Exception:
+            except Exception as e:
+                logger.debug('Error in handle_peer: {}'.format(e))
                 peer.close()
                 with self.peers_lock:
                     del self.peers[peer.address]
