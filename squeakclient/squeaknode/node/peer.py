@@ -35,10 +35,10 @@ class Peer(object):
         self._remote_version = None
         self._handshake_complete = False
         self._message_decoder = MessageDecoder()
-        self._last_msg_revc_time = time_now
+        self._last_msg_revc_time = None
         self._last_sent_ping_nonce = None
-        self._last_sent_ping_time = time_now
-        self._last_recv_ping_time = time_now
+        self._last_sent_ping_time = None
+        self._last_recv_ping_time = None
 
     @property
     def nVersion(self):
@@ -143,21 +143,23 @@ class Peer(object):
                 self.close()
 
     def check_inactive(self):
-        if time.time() - self._last_msg_revc_time > LAST_MESSAGE_TIMEOUT:
-            logger.info('Closing peer because of last message timeout {}'.format(self))
-            self.close()
+        if self._last_msg_revc_time:
+            if time.time() - self._last_msg_revc_time > LAST_MESSAGE_TIMEOUT:
+                logger.info('Closing peer because of last message timeout {}'.format(self))
+                self.close()
 
     def check_ping_timeout(self):
-        _last_sent_ping_nonce = self._last_sent_ping_nonce
-        _last_sent_ping_time = self._last_sent_ping_time
+        last_sent_ping_nonce = self._last_sent_ping_nonce
+        last_sent_ping_time = self._last_sent_ping_time
 
-        if _last_sent_ping_nonce:
-            if time.time() - _last_sent_ping_time > PING_TIMEOUT:
+        if last_sent_ping_nonce and last_sent_ping_time:
+            if time.time() - last_sent_ping_time > PING_TIMEOUT:
                 logger.info('Closing peer because of ping timeout {}'.format(self))
                 self.close()
                 return
 
-        if time.time() - _last_sent_ping_time > PING_INTERVAL:
+        if last_sent_ping_time is None or \
+           time.time() - last_sent_ping_time > PING_INTERVAL:
             self.send_ping()
 
     def send_ping(self):
