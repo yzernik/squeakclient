@@ -102,9 +102,9 @@ def guide_add_peer(alice_stub, bob_stub):
         addr=addr,
     )
     alice_stub.AddPeer(request)
+    time.sleep(1)
 
     # Check how many peers alice has.
-    time.sleep(5)
     request = route_guide_pb2.ListPeersRequest()
     response = alice_stub.ListPeers(request)
     alice_peers = response.peers
@@ -112,7 +112,6 @@ def guide_add_peer(alice_stub, bob_stub):
     assert 1 == len(alice_peers)
 
     # Check how many peers bob has.
-    time.sleep(5)
     request = route_guide_pb2.ListPeersRequest()
     response = bob_stub.ListPeers(request)
     alice_peers = response.peers
