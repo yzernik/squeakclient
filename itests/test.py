@@ -94,21 +94,29 @@ def guide_get_wallet_balance(stub):
     assert 1505000000000 == balance.total_balance
 
 
-def guide_add_peer(stub):
+def guide_add_peer(alice_stub, bob_stub):
     # Add a new peer for alice.
     new_peer_host = 'sqk_bob'
     addr = route_guide_pb2.Addr(host=new_peer_host)
     request = route_guide_pb2.AddPeerRequest(
         addr=addr,
     )
-    stub.AddPeer(request)
+    alice_stub.AddPeer(request)
 
     # Check how many peers alice has.
     time.sleep(5)
     request = route_guide_pb2.ListPeersRequest()
-    response = stub.ListPeers(request)
+    response = alice_stub.ListPeers(request)
     alice_peers = response.peers
     print("Alice peers: %s" % alice_peers)
+    assert 1 == len(alice_peers)
+
+    # Check how many peers bob has.
+    time.sleep(5)
+    request = route_guide_pb2.ListPeersRequest()
+    response = bob_stub.ListPeers(request)
+    alice_peers = response.peers
+    print("Bob peers: %s" % alice_peers)
     assert 1 == len(alice_peers)
 
 
@@ -135,22 +143,26 @@ def run():
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
-    with grpc.insecure_channel('sqk_alice:50051') as channel:
-        stub = route_guide_pb2_grpc.RouteGuideStub(channel)
+    with grpc.insecure_channel('sqk_alice:50051') as alice_channel, \
+         grpc.insecure_channel('sqk_bob:50051') as bob_channel:
+
+        # Make the stubs
+        alice_stub = route_guide_pb2_grpc.RouteGuideStub(alice_channel)
+        bob_stub = route_guide_pb2_grpc.RouteGuideStub(bob_channel)
         print("-------------- GetFeature --------------")
-        guide_get_feature(stub)
+        guide_get_feature(alice_stub)
         print("-------------- ListFeatures --------------")
-        guide_list_features(stub)
+        guide_list_features(alice_stub)
         print("-------------- RouteChat --------------")
-        guide_route_chat(stub)
+        guide_route_chat(alice_stub)
         print("-------------- WalletBalance --------------")
-        guide_get_wallet_balance(stub)
+        guide_get_wallet_balance(alice_stub)
         print("-------------- AddPeer --------------")
-        guide_add_peer(stub)
+        guide_add_peer(alice_stub, bob_stub)
         print("-------------- GenerateSigningKey --------------")
-        guide_generate_signing_key(stub)
+        guide_generate_signing_key(alice_stub)
         print("-------------- MakeSqueak --------------")
-        guide_make_squeak(stub)
+        guide_make_squeak(alice_stub)
 
 
 if __name__ == '__main__':
