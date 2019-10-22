@@ -152,7 +152,7 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
     def GenerateSigningKey(self, request, context):
         address = self.node.generate_signing_key()
         return route_guide_pb2.GenerateSigningKeyResponse(
-            address=address,
+            address=str(address),
         )
 
     def serve(self):

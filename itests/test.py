@@ -87,70 +87,82 @@ def guide_route_chat(stub):
                                              response.location))
 
 
-def guide_get_wallet_balance(stub):
-    balance = stub.WalletBalance(route_guide_pb2.WalletBalanceRequest())
-    print("Balance: %s" % balance)
-    print("Balance confirmed %s %s" % (balance.total_balance, balance.total_balance))
-    assert 1505000000000 == balance.total_balance
-
-
-def guide_add_peer(stub):
-    # Add a new peer for alice.
-    new_peer_host = 'sqk_bob'
-    addr = route_guide_pb2.Addr(host=new_peer_host)
-    request = route_guide_pb2.AddPeerRequest(
-        addr=addr,
-    )
-    stub.AddPeer(request)
-
-    # Check how many peers alice has.
-    time.sleep(5)
-    request = route_guide_pb2.ListPeersRequest()
-    response = stub.ListPeers(request)
-    alice_peers = response.peers
-    print("Alice peers: %s" % alice_peers)
-    assert 1 == len(alice_peers)
-
-
-def guide_generate_signing_key(stub):
-    request = route_guide_pb2.GenerateSigningKeyRequest()
-    response = stub.GenerateSigningKey(request)
-    address = response.address
-    print("Generated signing key with address: %s" % address)
-
-
-def guide_make_squeak(stub):
-    content = 'hello world!'
-    request = route_guide_pb2.MakeSqueakRequest(
-        content=content,
-    )
-    response = stub.MakeSqueak(request)
-    squeak = response.squeak
-    print("Made squeak: %s" % squeak)
-    assert 'hello world!' == squeak.content
-    assert 400 == squeak.block_height
-
-
 def run():
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
-    with grpc.insecure_channel('sqk_alice:50051') as channel:
-        stub = route_guide_pb2_grpc.RouteGuideStub(channel)
+    with grpc.insecure_channel('sqk_alice:50051') as alice_channel, \
+         grpc.insecure_channel('sqk_bob:50051') as bob_channel, \
+         grpc.insecure_channel('sqk_carol:50051') as carol_channel:
+
+        # Make the stubs
+        alice_stub = route_guide_pb2_grpc.RouteGuideStub(alice_channel)
+        bob_stub = route_guide_pb2_grpc.RouteGuideStub(bob_channel)
+        carol_stub = route_guide_pb2_grpc.RouteGuideStub(carol_channel)
+
         print("-------------- GetFeature --------------")
-        guide_get_feature(stub)
+        guide_get_feature(alice_stub)
         print("-------------- ListFeatures --------------")
-        guide_list_features(stub)
+        guide_list_features(alice_stub)
         print("-------------- RouteChat --------------")
-        guide_route_chat(stub)
+        guide_route_chat(alice_stub)
+
         print("-------------- WalletBalance --------------")
-        guide_get_wallet_balance(stub)
+        balance = alice_stub.WalletBalance(route_guide_pb2.WalletBalanceRequest())
+        print("Balance: %s" % balance)
+        print("Balance confirmed %s %s" % (balance.total_balance, balance.total_balance))
+        assert balance.total_balance == 1505000000000
+
         print("-------------- AddPeer --------------")
-        guide_add_peer(stub)
+        # Connect alice to bob
+        addr = route_guide_pb2.Addr(host='sqk_bob')
+        request = route_guide_pb2.AddPeerRequest(
+            addr=addr,
+        )
+        alice_stub.AddPeer(request)
+        time.sleep(1)
+
+        # Connect bob to carol
+        addr = route_guide_pb2.Addr(host='sqk_carol')
+        request = route_guide_pb2.AddPeerRequest(
+            addr=addr,
+        )
+        bob_stub.AddPeer(request)
+        time.sleep(1)
+
+        # Check how many peers alice has.
+        time.sleep(5)
+        request = route_guide_pb2.ListPeersRequest()
+        alice_peers = alice_stub.ListPeers(request).peers
+        bob_peers = bob_stub.ListPeers(request).peers
+        carol_peers = carol_stub.ListPeers(request).peers
+        print("Alice peers: %s" % alice_peers)
+        assert len(alice_peers) >= 1
+        print("Bob peers: %s" % bob_peers)
+        assert len(bob_peers) >= 1
+        print("Carol peers: %s" % carol_peers)
+        assert len(carol_peers) >= 1
+
         print("-------------- GenerateSigningKey --------------")
-        guide_generate_signing_key(stub)
+        request = route_guide_pb2.GenerateSigningKeyRequest()
+        resp = alice_stub.GenerateSigningKey(request)
+        alice_address = resp.address
+        bob_address = bob_stub.GenerateSigningKey(request).address
+        carol_address = carol_stub.GenerateSigningKey(request).address
+        print("Generated signing key for Alice with address: %s" % alice_address)
+        print("Generated signing key for Bob with address: %s" % bob_address)
+        print("Generated signing key for Alice with address: %s" % carol_address)
+
         print("-------------- MakeSqueak --------------")
-        guide_make_squeak(stub)
+        content = 'hello world!'
+        request = route_guide_pb2.MakeSqueakRequest(
+            content=content,
+        )
+        response = alice_stub.MakeSqueak(request)
+        squeak = response.squeak
+        print("Made squeak: %s" % squeak)
+        assert 'hello world!' == squeak.content
+        assert 400 == squeak.block_height
 
 
 if __name__ == '__main__':

@@ -37,6 +37,7 @@ class SigningKeyAccess(object):
         self.set_signing_key(signing_key)
         verifying_key = signing_key.get_verifying_key()
         address = CSqueakAddress.from_verifying_key(verifying_key)
+        logger.info('Returning generated address: {}'.format(str(address)))
         return address
 
     def on_key_changed(self):

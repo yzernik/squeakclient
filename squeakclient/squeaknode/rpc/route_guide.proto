@@ -139,13 +139,13 @@ message WalletBalanceRequest {
 
 message WalletBalanceResponse {
     /// The balance of the wallet
-    int64 total_balance = 1 [json_name = "total_balance"];
+    int64 total_balance = 1;
 
     /// The confirmed balance of a wallet(with >= 1 confirmations)
-    int64 confirmed_balance = 2 [json_name = "confirmed_balance"];
+    int64 confirmed_balance = 2;
 
     /// The unconfirmed balance of a wallet(with 0 confirmations)
-    int64 unconfirmed_balance = 3 [json_name = "unconfirmed_balance"];
+    int64 unconfirmed_balance = 3;
 }
 
 // message GetPeersRequest {
@@ -175,24 +175,24 @@ message ListPeersRequest {
 
 message ListPeersResponse {
     /// The list of currently connected peers
-    repeated Peer peers = 1 [json_name = "peers"];
+    repeated Peer peers = 1;
 }
 
 message MakeSqueakRequest {
     /// Content of the squeak to be made.
-    string content = 1 [json_name = "content"];
+    string content = 1;
 }
 
 message MakeSqueakResponse {
     /// The squeak.
-    Squeak squeak = 1 [json_name = "squeak"];
+    Squeak squeak = 1;
 }
 
 message GenerateSigningKeyRequest {}
 
 message GenerateSigningKeyResponse {
     /// Address of the signing key.
-    string address = 1 [json_name = "address"];
+    string address = 1;
 }
 
 message Addr {
@@ -201,43 +201,43 @@ message Addr {
 
 message Peer {
     /// Network host of the peer; eg `127.0.0.1`
-    string host = 1 [json_name = "host"];
+    string host = 1;
 
     /// Network host of the peer; eg `10011`
-    uint64 port = 2 [json_name = "port"];
+    uint64 port = 2;
 
     /// Bytes of data transmitted to this peer
-    uint64 bytes_sent = 3 [json_name = "bytes_sent"];
+    uint64 bytes_sent = 3;
 
     /// Bytes of data transmitted from this peer
-    uint64 bytes_recv = 4 [json_name = "bytes_recv"];
+    uint64 bytes_recv = 4;
 
     /// Satoshis sent to this peer
-    int64 sat_sent = 5 [json_name = "sat_sent"];
+    int64 sat_sent = 5;
 
     /// Satoshis received from this peer
-    int64 sat_recv = 6 [json_name = "sat_recv"];
+    int64 sat_recv = 6;
 
     /// A channel is inbound if the counterparty initiated the connection
-    bool inbound = 7 [json_name = "inbound"];
+    bool inbound = 7;
 
     /// Ping time to this peer
-    int64 ping_time = 8 [json_name = "ping_time"];
+    int64 ping_time = 8;
 }
 
 message Squeak {
     /// Hash of the squeak.
-    bytes hash = 1 [json_name = "hash"];
+    bytes hash = 1;
 
     /// Address of the creator.
-    string address = 2 [json_name = "address"];
+    string address = 2;
 
     /// Content of the squeak.
-    string content = 3 [json_name = "content"];
+    string content = 3;
 
     /// Block height of the squeak.
-    uint64 block_height = 4 [json_name = "block_height"];
+    uint64 block_height = 4;
 
     /// Timestamp of the squeak.
-    uint64 timestamp = 5 [json_name = "timestamp"];
+    uint64 timestamp = 5;
 }
