@@ -137,15 +137,16 @@ def run():
         bob_peers = bob_stub.ListPeers(request).peers
         carol_peers = carol_stub.ListPeers(request).peers
         print("Alice peers: %s" % alice_peers)
-        assert len(alice_peers) >= 2
+        assert len(alice_peers) >= 1
         print("Bob peers: %s" % bob_peers)
-        assert len(bob_peers) >= 2
+        assert len(bob_peers) >= 1
         print("Carol peers: %s" % carol_peers)
-        assert len(carol_peers) >= 2
+        assert len(carol_peers) >= 1
 
         print("-------------- GenerateSigningKey --------------")
         request = route_guide_pb2.GenerateSigningKeyRequest()
-        alice_address = alice_stub.GenerateSigningKey(request).address
+        resp = alice_stub.GenerateSigningKey(request)
+        alice_address = resp.address
         bob_address = bob_stub.GenerateSigningKey(request).address
         carol_address = carol_stub.GenerateSigningKey(request).address
         print("Generated signing key for Alice with address: %s" % alice_address)

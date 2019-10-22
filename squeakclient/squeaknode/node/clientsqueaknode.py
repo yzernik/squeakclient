@@ -69,7 +69,7 @@ class ClientSqueakNode(object):
         self.signing_key_access.set_signing_key(signing_key)
 
     def generate_signing_key(self):
-        self.signing_key_access.generate_signing_key()
+        return self.signing_key_access.generate_signing_key()
 
     def listen_key_changed(self, callback):
         self.signing_key_access.listen_key_changed(callback)
