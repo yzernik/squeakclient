@@ -2,7 +2,6 @@ import os
 
 import pytest
 from squeak.core import CheckSqueak
-from squeak.core import CheckSqueakDecryptionKeyError
 from squeak.core import HASH_LENGTH
 from squeak.core.signing import CSigningKey
 
@@ -49,23 +48,6 @@ class TestSqueakMaker(object):
         decrypted_content = squeak.GetDecryptedContentStr()
 
         assert decrypted_content == content
-
-    def test_set_decryption_key(self, signing_key, verifying_key, blockchain):
-        maker = SqueakMaker(signing_key, blockchain)
-        content = 'Hello world!'
-        squeak = maker.make_squeak(content)
-        decryption_key = squeak.GetDecryptionKey()
-
-        CheckSqueak(squeak)
-
-        cleared_squeak = maker.clear_decryption_key(squeak)
-
-        with pytest.raises(CheckSqueakDecryptionKeyError):
-            CheckSqueak(cleared_squeak)
-
-        updated_squeak = maker.set_decryption_key(cleared_squeak, decryption_key)
-
-        CheckSqueak(updated_squeak)
 
 
 class MockBlockchain(Blockchain):

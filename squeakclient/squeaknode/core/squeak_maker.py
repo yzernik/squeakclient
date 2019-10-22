@@ -3,7 +3,6 @@ import time
 from squeak.core import CSqueak
 from squeak.core import HASH_LENGTH
 from squeak.core import MakeSqueakFromStr
-from squeak.core.encryption import CDecryptionKey
 from squeak.core.signing import CSigningKey
 
 from squeakclient.squeaknode.core.blockchain import Blockchain
@@ -32,40 +31,4 @@ class SqueakMaker(object):
             block_height,
             block_hash,
             timestamp,
-        )
-
-    def clear_decryption_key(self, squeak: CSqueak) -> CSqueak:
-        """Create a new CSqueak instance, with the decryption key cleared."""
-        return CSqueak(
-            hashEncContent=squeak.hashEncContent,
-            hashReplySqk=squeak.hashReplySqk,
-            hashBlock=squeak.hashBlock,
-            nBlockHeight=squeak.nBlockHeight,
-            scriptPubKey=squeak.scriptPubKey,
-            vchEncryptionKey=squeak.vchEncryptionKey,
-            vchEncDatakey=squeak.vchEncDatakey,
-            vchIv=squeak.vchIv,
-            nTime=squeak.nTime,
-            nNonce=squeak.nNonce,
-            encContent=squeak.encContent,
-            scriptSig=squeak.scriptSig,
-            vchDecryptionKey=b'',
-        )
-
-    def set_decryption_key(self, squeak: CSqueak, decryption_key: CDecryptionKey) -> CSqueak:
-        """Create a new CSqueak instance, with the decryption key set."""
-        return CSqueak(
-            hashEncContent=squeak.hashEncContent,
-            hashReplySqk=squeak.hashReplySqk,
-            hashBlock=squeak.hashBlock,
-            nBlockHeight=squeak.nBlockHeight,
-            scriptPubKey=squeak.scriptPubKey,
-            vchEncryptionKey=squeak.vchEncryptionKey,
-            vchEncDatakey=squeak.vchEncDatakey,
-            vchIv=squeak.vchIv,
-            nTime=squeak.nTime,
-            nNonce=squeak.nNonce,
-            encContent=squeak.encContent,
-            scriptSig=squeak.scriptSig,
-            vchDecryptionKey=decryption_key.serialize(),
         )
