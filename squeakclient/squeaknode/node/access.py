@@ -139,7 +139,7 @@ class PeersAccess(object):
         self.peer_manager.listen_peers_changed(callback)
 
     def get_local_version_nonces(self):
-        peers = list(self.peer_manager.peers.values())
+        peers = self.peer_manager.connection_manager.peers
         return [peer.local_version.nNonce if peer.local_version else None
                 for peer in peers]
 

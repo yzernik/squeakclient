@@ -14,7 +14,7 @@ from squeakclient.squeaknode.node.access import PeersAccess
 from squeakclient.squeaknode.node.access import SigningKeyAccess
 from squeakclient.squeaknode.node.access import SqueaksAccess
 from squeakclient.squeaknode.node.peer_manager import PeerManager
-from squeakclient.squeaknode.node.peer_message_handler import PeerMessageHandler
+from squeakclient.squeaknode.node.connection_manager import ConnectionManager
 
 
 UPDATE_THREAD_SLEEP_TIME = 10
@@ -31,17 +31,19 @@ class ClientSqueakNode(object):
         self.storage = storage
         self.blockchain = blockchain
         self.lightning_client = lightning_client
-        self.peer_manager = PeerManager()
+        self.connection_manager = ConnectionManager()
+        self.peer_manager = PeerManager(self.connection_manager)
         self.peers_access = PeersAccess(self.peer_manager)
         self.signing_key_access = SigningKeyAccess(self.storage)
         self.follows_access = FollowsAccess(self.storage)
         self.squeaks_access = SqueaksAccess(self.storage)
-        self.peer_msg_handler = PeerMessageHandler(self.peers_access, self.squeaks_access)
+        # self.peer_msg_handler = PeerMessageHandler(self.peers_access, self.squeaks_access)
 
     def start(self):
         # Start network node
         self.peer_manager.start(
-            self.peer_msg_handler,
+            self.peers_access,
+            self.squeaks_access,
         )
 
         # Start Update thread
@@ -117,7 +119,7 @@ class ClientSqueakNode(object):
 
     def find_more_peers(self):
         peers = self.get_peers()
-        if len(peers) < self.peers_access.peer_manager.min_peers:
+        if len(peers) < self.peers_access.peer_manager.connection_manager.min_peers:
             self.peer_manager.broadcast_msg(msg_getaddr())
 
     def get_wallet_balance(self):
