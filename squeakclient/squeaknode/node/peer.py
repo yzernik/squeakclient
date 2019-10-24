@@ -1,3 +1,4 @@
+import threading
 import logging
 import time
 from io import BytesIO
@@ -25,6 +26,7 @@ class Peer(object):
     def __init__(self, peer_socket, address, outgoing=False):
         time_now = int(time.time())
         self._peer_socket = peer_socket
+        self._peer_socket_lock = threading.Lock()
         self._address = address
         self._outgoing = outgoing
         self._connect_time = time_now
@@ -134,7 +136,8 @@ class Peer(object):
     def send_msg(self, msg):
         logger.debug('Sending message of type {}'.format(msg.command))
         data = msg.to_bytes()
-        self._peer_socket.send(data)
+        with self._peer_socket_lock:
+            self._peer_socket.send(data)
 
     def has_handshake_timeout(self):
         """Return True if the handshake has timed out."""

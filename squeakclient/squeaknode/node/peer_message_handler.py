@@ -36,19 +36,12 @@ class PeerMessageHandler():
         self.peers_access = peers_access
         self.squeaks_access = squeaks_access
 
-    def initialize_handshake(self):
+    def initiate_handshake(self):
         """Action to take upon completion of handshake with a peer."""
         logger.debug('Starting handshake with {}'.format(self.peer))
         version = self.version_pkt()
         self.peer.set_local_version(version)
         self.peers_access.send_msg(self.peer, version)
-
-    def on_handshake_complete(self):
-        """Action to take upon completion of handshake with a peer."""
-        logger.debug('Initializing post-handshake connection with {}'.format(self.peer))
-        self.initiate_ping()
-        if self.peer.outgoing:
-            self.peers_access.send_msg(self.peer, msg_getaddr())
 
     def initiate_ping(self):
         """Send a ping message and expect a pong response."""
@@ -132,7 +125,9 @@ class PeerMessageHandler():
             self.peer.set_handshake_complete(True)
             # self.on_peers_changed()  # TODO: call on_peers_changed inside set_handshake_complete method.
             logger.debug('Handshake complete with {}'.format(self.peer))
-            self.on_handshake_complete()
+            self.initiate_ping()
+            if self.peer.outgoing:
+                self.peers_access.send_msg(self.peer, msg_getaddr())
 
     def handle_ping(self, msg):
         nonce = msg.nonce

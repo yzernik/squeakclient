@@ -94,23 +94,35 @@ class PeerManager(object):
     def handle_connection(self, peer):
         if self.connection_manager.add_peer(peer):
             threading.Thread(
-                target=self.handle_peer,
+                target=self.handle_peer_msgs,
                 args=(peer,),
             ).start()
 
-    def handle_peer(self, peer):
+    def handle_peer_msgs(self, peer):
         """Listens on the peer_socket of the peer.
         """
+        peer_msg_handler = PeerMessageHandler(peer, self.peers_access, self.squeaks_access)
         while True:
             try:
-                peer_msg_handler = PeerMessageHandler(peer, self.peers_access, self.squeaks_access)
-                # peer.handle_recv_data(self.handle_msg)
                 peer_msg_handler.handle_msgs()
             except Exception as e:
                 logger.exception('Error in handle_peer: {}'.format(e))
                 peer.close()
                 self.connection_manager.remove_peer(peer)
                 return
+
+    # def handle_peer_updates(self, peer):
+    #     """Run periodic tasks on the peer.
+    #     """
+    #     peer_msg_handler = PeerMessageHandler(peer, self.peers_access, self.squeaks_access)
+    #     while True:
+    #         try:
+    #             peer_msg_handler.handle_msgs()
+    #         except Exception as e:
+    #             logger.exception('Error in handle_peer: {}'.format(e))
+    #             peer.close()
+    #             self.connection_manager.remove_peer(peer)
+    #             return
 
     def send_msg(self, peer, msg):
         logger.debug('Sending msg {} to {}'.format(msg, peer))
@@ -143,18 +155,12 @@ class PeerManager(object):
         address = (ip, squeak.params.params.DEFAULT_PORT)
         self.connect_address(address)
 
-    # def handle_msg(self, msg, peer):
-    #     """Main message handler.
-    #     """
-    #     logger.debug('Received msg {} from {}'.format(msg, peer))
-    #     self.peer_msg_handler.handle_peer_message(msg, peer)
-
     def on_connect(self, peer):
         """Action to take when a new peer connection is made.
         """
         logger.debug('Calling on_connect with {}'.format(peer))
         peer_msg_handler = PeerMessageHandler(peer, self.peers_access, self.squeaks_access)
-        peer_msg_handler.initialize_handshake()
+        peer_msg_handler.initiate_handshake()
 
     def connect_seed_peers(self):
         """Find more peers.
