@@ -112,14 +112,19 @@ class Peer(object):
         timestamp = timestamp or time.time()
         self._last_recv_ping_time = timestamp
 
-    def handle_recv_data(self, handle_msg_fn):
+    def handle_recv_data(self):
+        """Read data from the peer socket, and yield messages as they are decoded.
+
+        This method blocks when the socket has no data to read.
+        """
         recv_data = self._peer_socket.recv(SOCKET_READ_LEN)
         if not recv_data:
             raise Exception('Peer disconnected')
 
         for msg in self._message_decoder.process_recv_data(recv_data):
             self._last_msg_revc_time = time.time()
-            handle_msg_fn(msg, self)
+            # handle_msg_fn(msg, self)
+            yield msg
 
     def close(self):
         logger.info("closing peer socket: {}".format(self._peer_socket))
