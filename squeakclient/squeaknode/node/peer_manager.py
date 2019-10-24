@@ -125,14 +125,6 @@ class PeerManager(object):
     #             self.connection_manager.remove_peer(peer)
     #             return
 
-    def send_msg(self, peer, msg):
-        peer.send_msg(msg)
-
-    def broadcast_msg(self, msg):
-        for peer in list(self.connection_manager.peers):
-            if peer.handshake_complete:
-                self.send_msg(peer, msg)
-
     def add_address(self, address):
         """Add a new address."""
         if self.connection_manager.need_more_peers():

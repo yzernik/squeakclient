@@ -120,12 +120,6 @@ class PeersAccess(object):
     def __init__(self, peer_manager: PeerManager) -> None:
         self.peer_manager = peer_manager
 
-    def send_msg(self, peer, msg):
-        self.peer_manager.send_msg(peer, msg)
-
-    def broadcast_msg(self, msg):
-        self.peer_manager.broadcast_msg(msg)
-
     def connect_host(self, host):
         self.peer_manager.connect_host(host)
 

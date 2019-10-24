@@ -1,9 +1,4 @@
 import logging
-import threading
-import time
-
-from squeak.messages import msg_getaddr
-from squeak.messages import msg_getsqueaks
 
 from squeakclient.squeaknode.core.blockchain import Blockchain
 from squeakclient.squeaknode.core.lightning_client import LightningClient
@@ -45,21 +40,6 @@ class ClientSqueakNode(object):
             self.peers_access,
             self.squeaks_access,
         )
-
-        # Start Update thread
-        threading.Thread(target=self.update).start()
-
-    def update(self):
-        """Periodic task updates client."""
-        while True:
-            # Find more peers if needed.
-            self.find_more_peers()
-
-            # Fetch squeak data from other peers.
-            self.find_squeaks()
-
-            # Sleep
-            time.sleep(UPDATE_THREAD_SLEEP_TIME)
 
     def get_signing_key(self):
         return self.signing_key_access.get_signing_key()
@@ -103,11 +83,6 @@ class ClientSqueakNode(object):
     def get_follows(self):
         self.follows_access.get_follows()
 
-    def find_squeaks(self):
-        locator = self.follows_access.get_follow_locator()
-        getsqueaks = msg_getsqueaks(locator=locator)
-        self.peer_manager.broadcast_msg(getsqueaks)
-
     def connect_host(self, host):
         self.peers_access.connect_host(host)
 
@@ -116,11 +91,6 @@ class ClientSqueakNode(object):
 
     def listen_peers_changed(self, callback):
         self.peers_access.listen_peers_changed(callback)
-
-    def find_more_peers(self):
-        peers = self.get_peers()
-        if len(peers) < self.peers_access.peer_manager.connection_manager.min_peers:
-            self.peer_manager.broadcast_msg(msg_getaddr())
 
     def get_wallet_balance(self):
         return self.lightning_client.get_wallet_balance()
