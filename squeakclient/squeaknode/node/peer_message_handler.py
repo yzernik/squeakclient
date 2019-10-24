@@ -35,15 +35,6 @@ class PeerMessageHandler():
         self.squeaks_access = squeaks_access
         self.peer_controller = PeerController(self.peer, self.peers_access, self.squeaks_access)
 
-    def initiate_handshake(self):
-        self.peer_controller.initiate_handshake()
-
-    def initiate_ping(self):
-        self.peer_controller.initiate_ping()
-
-    def version_pkt(self):
-        return self.peer_controller.version_pkt()
-
     def handle_msgs(self):
         """Handles messages from the peer if there are any available.
 
@@ -94,7 +85,7 @@ class PeerMessageHandler():
 
         self.peer.set_remote_version(msg)
         if self.peer.local_version is None:
-            version = self.version_pkt()
+            version = self.peer_controller.version_pkt()
             self.peer.set_local_version(version)
             self.peers_access.send_msg(self.peer, version)
         self.peers_access.send_msg(self.peer, msg_verack())
@@ -105,7 +96,7 @@ class PeerMessageHandler():
             self.peer.set_handshake_complete(True)
             # self.on_peers_changed()  # TODO: call on_peers_changed inside set_handshake_complete method.
             logger.debug('Handshake complete with {}'.format(self.peer))
-            self.initiate_ping()
+            self.peer_controller.initiate_ping()
             if self.peer.outgoing:
                 self.peers_access.send_msg(self.peer, msg_getaddr())
 

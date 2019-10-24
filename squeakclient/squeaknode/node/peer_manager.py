@@ -7,6 +7,7 @@ import squeak.params
 
 from squeakclient.squeaknode.node.peer import Peer
 from squeakclient.squeaknode.node.peer_message_handler import PeerMessageHandler
+from squeakclient.squeaknode.node.peer_controller import PeerController
 
 
 MIN_PEERS = 5
@@ -58,8 +59,8 @@ class PeerManager(object):
 
                 # Check if it's time to send a ping.
                 if peer.is_time_for_ping():
-                    peer_msg_handler = PeerMessageHandler(peer, self.peers_access, self.squeaks_access)
-                    peer_msg_handler.initiate_ping(peer)
+                    peer_controller = PeerController(peer, self.peers_access, self.squeaks_access)
+                    peer_controller.initiate_ping()
 
             # Connect to more peers
             if len(self.get_connected_peers()) == 0:
@@ -125,7 +126,6 @@ class PeerManager(object):
     #             return
 
     def send_msg(self, peer, msg):
-        logger.debug('Sending msg {} to {}'.format(msg, peer))
         peer.send_msg(msg)
 
     def broadcast_msg(self, msg):
@@ -159,8 +159,8 @@ class PeerManager(object):
         """Action to take when a new peer connection is made.
         """
         logger.debug('Calling on_connect with {}'.format(peer))
-        peer_msg_handler = PeerMessageHandler(peer, self.peers_access, self.squeaks_access)
-        peer_msg_handler.initiate_handshake()
+        peer_controller = PeerController(peer, self.peers_access, self.squeaks_access)
+        peer_controller.initiate_handshake()
 
     def connect_seed_peers(self):
         """Find more peers.

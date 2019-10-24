@@ -125,7 +125,7 @@ class Peer(object):
 
         for msg in self._message_decoder.process_recv_data(recv_data):
             self._last_msg_revc_time = time.time()
-            # handle_msg_fn(msg, self)
+            logger.debug('Received msg {} from {}'.format(msg, self))
             yield msg
 
     def close(self):
@@ -134,7 +134,7 @@ class Peer(object):
             self._peer_socket.close()
 
     def send_msg(self, msg):
-        logger.debug('Sending message of type {}'.format(msg.command))
+        logger.debug('Sending msg {} to {}'.format(msg, self))
         data = msg.to_bytes()
         with self._peer_socket_lock:
             self._peer_socket.send(data)

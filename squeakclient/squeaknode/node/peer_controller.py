@@ -1,4 +1,3 @@
-import time
 import logging
 
 from squeak.messages import msg_ping
