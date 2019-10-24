@@ -147,12 +147,16 @@ class Peer(object):
 
     def has_inactive_timeout(self):
         """Return True if the last message received time has timed out."""
+        if not self._handshake_complete:
+            return False
         if self._last_msg_revc_time is None:
             return False
         return time.time() - self._last_msg_revc_time > LAST_MESSAGE_TIMEOUT
 
     def has_ping_timeout(self):
         """Return True if the ping has timed out."""
+        if not self._handshake_complete:
+            return False
         last_sent_ping_nonce = self._last_sent_ping_nonce
         last_sent_ping_time = self._last_sent_ping_time
         if last_sent_ping_nonce is None:
@@ -163,6 +167,8 @@ class Peer(object):
 
     def is_time_for_ping(self):
         """Return True if a ping message needs to be sent."""
+        if not self._handshake_complete:
+            return False
         last_sent_ping_time = self._last_sent_ping_time
         if last_sent_ping_time is None:
             return True
