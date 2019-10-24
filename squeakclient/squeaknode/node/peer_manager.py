@@ -153,11 +153,8 @@ class PeerManager(object):
         """Action to take when a new peer connection is made.
         """
         logger.debug('Calling on_connect with {}'.format(peer))
-        try:
-            peer_msg_handler = PeerMessageHandler(peer, self.peers_access, self.squeaks_access)
-            peer_msg_handler.initialize_handshake()
-        except Exception as e:
-            logger.exception('Error in on_connect: {}'.format(e))
+        peer_msg_handler = PeerMessageHandler(peer, self.peers_access, self.squeaks_access)
+        peer_msg_handler.initialize_handshake()
 
     def connect_seed_peers(self):
         """Find more peers.
