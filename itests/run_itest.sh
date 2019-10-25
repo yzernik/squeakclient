@@ -12,7 +12,7 @@ MINING_ADDRESS=$alice_address docker-compose up -d btcd
 echo "Mining 400 blocks to address: $alice_address ..."
 docker-compose run btcctl generate 400
 echo "Finished mining blocks."
-sleep 20
+sleep 10
 
 echo "Running test.sh...."
 docker-compose run test ./test.sh

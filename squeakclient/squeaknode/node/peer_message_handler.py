@@ -154,7 +154,7 @@ class PeerMessageHandler():
             self.peers_access.add_address((addr.ip, addr.port))
 
     def handle_getaddr(self, msg):
-        peers = self.peers_access.get_connected_peers()
+        peers = self.connection_manager.handshaked_peers
         addresses = [peer.caddress for peer in peers
                      if peer.outgoing]
         addr_msg = msg_addr(addrs=addresses)
