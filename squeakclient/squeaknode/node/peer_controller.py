@@ -29,15 +29,14 @@ class PeerController():
         logger.debug('Starting handshake with {}'.format(self.peer))
         version = self.version_pkt()
         self.peer.set_local_version(version)
-        self.peers_access.send_msg(self.peer, version)
+        self.peer.send_msg(version)
 
     def initiate_ping(self):
         """Send a ping message and expect a pong response."""
-        logger.debug('Sending a ping to {}'.format(self.peer))
         nonce = generate_nonce()
         ping = msg_ping()
         ping.nonce = nonce
-        self.peers_access.send_msg(self.peer, ping)
+        self.peer.send_msg(ping)
         self.peer.set_last_sent_ping(nonce)
 
     def version_pkt(self):

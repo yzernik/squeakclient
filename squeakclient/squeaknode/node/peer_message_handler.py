@@ -87,8 +87,8 @@ class PeerMessageHandler():
         if self.peer.local_version is None:
             version = self.peer_controller.version_pkt()
             self.peer.set_local_version(version)
-            self.peers_access.send_msg(self.peer, version)
-        self.peers_access.send_msg(self.peer, msg_verack())
+            self.peer.send_msg(version)
+        self.peer.send_msg(msg_verack())
 
     def handle_verack(self, msg):
         logger.debug('Handling verack message from peer {}'.format(self.peer))
@@ -98,14 +98,14 @@ class PeerMessageHandler():
             logger.debug('Handshake complete with {}'.format(self.peer))
             self.peer_controller.initiate_ping()
             if self.peer.outgoing:
-                self.peers_access.send_msg(self.peer, msg_getaddr())
+                self.peer.send_msg(msg_getaddr())
 
     def handle_ping(self, msg):
         nonce = msg.nonce
         pong = msg_pong()
         pong.nonce = nonce
         self.peer.set_last_recv_ping()
-        self.peers_access.send_msg(self.peer, pong)
+        self.peer.send_msg(pong)
 
     def handle_pong(self, msg):
         self.peer.set_pong_response(msg.nonce)
@@ -119,7 +119,7 @@ class PeerMessageHandler():
         addresses = [peer.caddress for peer in peers
                      if peer.outgoing]
         addr_msg = msg_addr(addrs=addresses)
-        self.peers_access.send_msg(self.peer, addr_msg)
+        self.peer.send_msg(addr_msg)
 
     def handle_inv(self, msg):
         invs = msg.inv
@@ -132,7 +132,7 @@ class PeerMessageHandler():
         new_invs = [CInv(type=1, hash=hash)
                     for hash in new_hashes]
         getdata_msg = msg_getdata(inv=new_invs)
-        self.peers_access.send_msg(self.peer, getdata_msg)
+        self.peer.send_msg(getdata_msg)
 
     def handle_getdata(self, msg):
         invs = msg.inv
@@ -142,11 +142,11 @@ class PeerMessageHandler():
                 squeak = self.squeaks_access.get_squeak(inv.hash)
                 if squeak:
                     squeak_msg = msg_squeak(squeak=squeak)
-                    self.peers_access.send_msg(self.peer, squeak_msg)
+                    self.peer.send_msg(squeak_msg)
                 else:
                     not_found.append(inv)
         notfound_msg = msg_notfound(inv=not_found)
-        self.peers_access.send_msg(self.peer, notfound_msg)
+        self.peer.send_msg(notfound_msg)
 
     def handle_notfound(self, msg):
         pass
@@ -157,7 +157,7 @@ class PeerMessageHandler():
         invs = [CInv(type=1, hash=squeak.GetHash())
                 for squeak in squeaks]
         inv_msg = msg_inv(inv=invs)
-        self.peers_access.send_msg(self.peer, inv_msg)
+        self.peer.send_msg(inv_msg)
 
     def handle_squeak(self, msg):
         # TODO: If squeak is interesting, respond with getoffer msg.
