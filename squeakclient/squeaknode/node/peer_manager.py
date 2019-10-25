@@ -5,7 +5,6 @@ import threading
 import squeak.params
 
 from squeakclient.squeaknode.node.peer import Peer
-from squeakclient.squeaknode.node.peer_message_handler import PeerMessageHandler
 
 
 MIN_PEERS = 5
@@ -24,10 +23,9 @@ class PeerManager(object):
         self.ip = socket.gethostbyname('localhost')
         self.port = port or squeak.params.params.DEFAULT_PORT
         self.connection_manager = connection_manager
-        # self.peer_msg_handler = None
 
-    def start(self, squeaks_access):
-        self.squeaks_access = squeaks_access
+    def start(self, peer_handler):
+        self.peer_handler = peer_handler
 
         # Start Listen thread
         threading.Thread(target=self.accept_connections).start()
@@ -56,9 +54,9 @@ class PeerManager(object):
             pass
 
     def handle_connection(self, peer):
-        peer_msg_handler = PeerMessageHandler(peer, self.connection_manager, self, self.squeaks_access)
         threading.Thread(
-            target=peer_msg_handler.start,
+            target=self.peer_handler.start,
+            args=(peer,),
         ).start()
 
     def add_address(self, address):
