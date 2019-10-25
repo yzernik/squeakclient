@@ -19,11 +19,11 @@ class PeerController():
     """Commands for interacting with remote peer.
     """
 
-    def __init__(self, peer: Peer, connection_manager, peers_access, squeaks_access) -> None:
+    def __init__(self, peer: Peer, connection_manager, peer_manager, squeaks_access) -> None:
         super().__init__()
         self.peer = peer
         self.connection_manager = connection_manager
-        self.peers_access = peers_access
+        self.peer_manager = peer_manager
         self.squeaks_access = squeaks_access
 
     def initiate_handshake(self):
@@ -43,7 +43,7 @@ class PeerController():
 
     def version_pkt(self):
         msg = msg_version()
-        local_ip, local_port = self.peers_access.get_local_ip_port()
+        local_ip, local_port = self.peer_manager.ip, self.peer_manager.port
         server_ip, server_port = self.peer.address
         msg.nVersion = HANDSHAKE_VERSION
         msg.addrTo.ip = server_ip

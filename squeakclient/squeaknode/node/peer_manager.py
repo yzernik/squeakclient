@@ -26,9 +26,7 @@ class PeerManager(object):
         self.connection_manager = connection_manager
         # self.peer_msg_handler = None
 
-    def start(self, peers_access, squeaks_access):
-        # self.peer_msg_handler = peer_msg_handler
-        self.peers_access = peers_access
+    def start(self, squeaks_access):
         self.squeaks_access = squeaks_access
 
         # Start Listen thread
@@ -58,7 +56,7 @@ class PeerManager(object):
             pass
 
     def handle_connection(self, peer):
-        peer_msg_handler = PeerMessageHandler(peer, self.connection_manager, self.peers_access, self.squeaks_access)
+        peer_msg_handler = PeerMessageHandler(peer, self.connection_manager, self, self.squeaks_access)
         threading.Thread(
             target=peer_msg_handler.start,
         ).start()

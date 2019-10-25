@@ -132,5 +132,5 @@ class PeersAccess(object):
     def listen_peers_changed(self, callback):
         self.peer_manager.listen_peers_changed(callback)
 
-    def get_local_ip_port(self):
-        return self.peer_manager.ip, self.peer_manager.port
+    # def get_local_ip_port(self):
+    #     return self.peer_manager.ip, self.peer_manager.port

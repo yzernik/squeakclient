@@ -29,13 +29,13 @@ class PeerMessageHandler():
     """Handles incoming messages from peers.
     """
 
-    def __init__(self, peer: Peer, connection_manager, peers_access, squeaks_access) -> None:
+    def __init__(self, peer: Peer, connection_manager, peer_manager, squeaks_access) -> None:
         super().__init__()
         self.peer = peer
         self.connection_manager = connection_manager
-        self.peers_access = peers_access
+        self.peer_manager = peer_manager
         self.squeaks_access = squeaks_access
-        self.peer_controller = PeerController(self.peer, self.connection_manager, self.peers_access, self.squeaks_access)
+        self.peer_controller = PeerController(self.peer, self.connection_manager, self.peer_manager, self.squeaks_access)
 
     def start(self):
         """Handles all sending and receiving of messages for this peer.
@@ -151,7 +151,7 @@ class PeerMessageHandler():
 
     def handle_addr(self, msg):
         for addr in msg.addrs:
-            self.peers_access.add_address((addr.ip, addr.port))
+            self.peer_manager.add_address((addr.ip, addr.port))
 
     def handle_getaddr(self, msg):
         peers = self.connection_manager.handshaked_peers

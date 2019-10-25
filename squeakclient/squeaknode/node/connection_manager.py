@@ -1,8 +1,5 @@
 import logging
-import socket
 import threading
-
-import squeak.params
 
 
 MIN_PEERS = 5
@@ -23,8 +20,6 @@ class ConnectionManager(object):
         self.max_peers = max_peers
         self.peers_lock = threading.Lock()
         self.peers_changed_callback = None
-        self.ip = socket.gethostbyname('localhost')
-        self.port = port or squeak.params.params.DEFAULT_PORT
         self.peer_msg_handler = None
 
     @property

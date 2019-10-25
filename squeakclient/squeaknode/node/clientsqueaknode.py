@@ -37,7 +37,6 @@ class ClientSqueakNode(object):
     def start(self):
         # Start network node
         self.peer_manager.start(
-            self.peers_access,
             self.squeaks_access,
         )
 
