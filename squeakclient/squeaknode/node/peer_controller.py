@@ -33,7 +33,6 @@ class PeerController():
 
     def initiate_ping(self):
         """Send a ping message and expect a pong response."""
-        logger.debug('Sending a ping to {}'.format(self.peer))
         nonce = generate_nonce()
         ping = msg_ping()
         ping.nonce = nonce
