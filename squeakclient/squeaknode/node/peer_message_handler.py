@@ -41,13 +41,8 @@ class PeerMessageHandler():
 
         This method blocks when the peer has not sent any messages.
         """
-        while True:
-            try:
-                for msg in self.peer.handle_recv_data():
-                    self.handle_peer_message(msg)
-            except Exception as e:
-                logger.exception('Error in handle_msgs: {}'.format(e))
-                return
+        for msg in self.peer.handle_recv_data():
+            self.handle_peer_message(msg)
 
     def handle_peer_message(self, msg):
         """Handle messages from a peer with completed handshake."""

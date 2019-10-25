@@ -29,13 +29,14 @@ class PeerHandler():
 
         This method blocks until the peer connection has stopped.
         """
-        peer_message_hander = PeerMessageHandler(peer, self.connection_manager, self.peer_manager, self.squeaks_access)
+        peer_message_handler = PeerMessageHandler(peer, self.connection_manager, self.peer_manager, self.squeaks_access)
+        peer_listener = PeerListener(peer_message_handler)
 
         listen_thread = threading.Thread(
-            target=peer_message_hander.handle_msgs,
+            target=peer_listener.handle_msgs,
         )
         update_thread = threading.Thread(
-            target=peer_message_hander.peer_controller.update,
+            target=peer_message_handler.peer_controller.update,
         )
 
         logger.debug('Peer thread starting... {}'.format(peer))
@@ -46,7 +47,7 @@ class PeerHandler():
             logger.debug('Peer listen thread started... {}'.format(peer))
 
             # Initiate handshake with the peer.
-            peer_message_hander.peer_controller.initiate_handshake()
+            peer_message_handler.peer_controller.initiate_handshake()
 
             # Wait for the listen thread to finish
             listen_thread.join()
@@ -56,3 +57,20 @@ class PeerHandler():
             peer.close()
             self.connection_manager.remove_peer(peer)
             logger.debug('Peer connection removed... {}'.format(peer))
+
+
+class PeerListener():
+    """Handles receiving messages from a peer.
+    """
+
+    def __init__(self, peer_message_handler) -> None:
+        super().__init__()
+        self.peer_message_handler = peer_message_handler
+
+    def handle_msgs(self):
+        while True:
+            try:
+                self.peer_message_handler.handle_msgs()
+            except Exception as e:
+                logger.exception('Error in handle_msgs: {}'.format(e))
+                return
