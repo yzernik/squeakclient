@@ -35,7 +35,7 @@ class PeerMessageHandler():
         self.connection_manager = connection_manager
         self.peers_access = peers_access
         self.squeaks_access = squeaks_access
-        self.peer_controller = PeerController(self.peer, self.peers_access, self.squeaks_access)
+        self.peer_controller = PeerController(self.peer, self.connection_manager, self.peers_access, self.squeaks_access)
 
     def start(self):
         """Handles all sending and receiving of messages for this peer.
@@ -45,11 +45,15 @@ class PeerMessageHandler():
         listen_thread = threading.Thread(
             target=self.handle_msgs,
         )
+        update_thread = threading.Thread(
+            target=self.peer_controller.update,
+        )
 
         logger.debug('Peer thread starting... {}'.format(self.peer))
         if self.connection_manager.add_peer(self.peer):
             logger.debug('Peer connection added... {}'.format(self.peer))
             listen_thread.start()
+            update_thread.start()
             logger.debug('Peer listen thread started... {}'.format(self.peer))
 
             # Initiate handshake with the peer.

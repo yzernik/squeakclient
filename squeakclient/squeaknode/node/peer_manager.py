@@ -7,7 +7,6 @@ import squeak.params
 
 from squeakclient.squeaknode.node.peer import Peer
 from squeakclient.squeaknode.node.peer_message_handler import PeerMessageHandler
-from squeakclient.squeaknode.node.peer_controller import PeerController
 
 
 MIN_PEERS = 5
@@ -37,37 +36,17 @@ class PeerManager(object):
         threading.Thread(target=self.accept_connections).start()
 
         # Start Update thread
-        threading.Thread(target=self.update).start()
+        # threading.Thread(target=self.update).start()
 
-    def update(self):
-        """Periodic task that keeps peers updated."""
-        while True:
-            logger.info('Running update thread.')
+    # def update(self):
+    #     """Periodic task that keeps peers updated."""
+    #     while True:
+    #         # Connect to more peers
+    #         if len(self.get_connected_peers()) == 0:
+    #             self.connect_seed_peers()
 
-            # Disconnect from unhealthy peers
-            # TODO move this to a different thread, one per peer.
-            for peer in list(self.connection_manager.peers):
-                if peer.has_handshake_timeout():
-                    logger.info('Closing peer because of handshake timeout {}'.format(peer))
-                    peer.close()
-                if peer.has_inactive_timeout():
-                    logger.info('Closing peer because of last message timeout {}'.format(peer))
-                    peer.close()
-                if peer.has_ping_timeout():
-                    logger.info('Closing peer because of ping timeout {}'.format(peer))
-                    peer.close()
-
-                # Check if it's time to send a ping.
-                if peer.is_time_for_ping():
-                    peer_controller = PeerController(peer, self.peers_access, self.squeaks_access)
-                    peer_controller.initiate_ping()
-
-            # Connect to more peers
-            if len(self.get_connected_peers()) == 0:
-                self.connect_seed_peers()
-
-            # Sleep
-            time.sleep(UPDATE_THREAD_SLEEP_TIME)
+    #         # Sleep
+    #         time.sleep(UPDATE_THREAD_SLEEP_TIME)
 
     def accept_connections(self):
         listen_socket = socket.socket()
@@ -98,32 +77,6 @@ class PeerManager(object):
             target=peer_msg_handler.start,
         ).start()
 
-    # def handle_peer_msgs(self, peer):
-    #     """Listens on the peer_socket of the peer.
-    #     """
-    #     peer_msg_handler = PeerMessageHandler(peer, self.connection_manager, self.peers_access, self.squeaks_access)
-    #     while True:
-    #         try:
-    #             peer_msg_handler.handle_msgs()
-    #         except Exception as e:
-    #             logger.exception('Error in handle_peer: {}'.format(e))
-    #             peer.close()
-    #             self.connection_manager.remove_peer(peer)
-    #             return
-
-    # def handle_peer_updates(self, peer):
-    #     """Run periodic tasks on the peer.
-    #     """
-    #     peer_msg_handler = PeerMessageHandler(peer, self.peers_access, self.squeaks_access)
-    #     while True:
-    #         try:
-    #             peer_msg_handler.handle_msgs()
-    #         except Exception as e:
-    #             logger.exception('Error in handle_peer: {}'.format(e))
-    #             peer.close()
-    #             self.connection_manager.remove_peer(peer)
-    #             return
-
     def add_address(self, address):
         """Add a new address."""
         if self.connection_manager.need_more_peers():
@@ -145,13 +98,6 @@ class PeerManager(object):
         ip = socket.gethostbyname(host)
         address = (ip, squeak.params.params.DEFAULT_PORT)
         self.connect_address(address)
-
-    # def on_connect(self, peer):
-    #     """Action to take when a new peer connection is made.
-    #     """
-    #     logger.debug('Calling on_connect with {}'.format(peer))
-    #     peer_controller = PeerController(peer, self.peers_access, self.squeaks_access)
-    #     peer_controller.initiate_handshake()
 
     def connect_seed_peers(self):
         """Find more peers.

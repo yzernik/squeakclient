@@ -1,3 +1,4 @@
+import time
 import logging
 
 from squeak.messages import msg_ping
@@ -18,9 +19,10 @@ class PeerController():
     """Commands for interacting with remote peer.
     """
 
-    def __init__(self, peer: Peer, peers_access, squeaks_access) -> None:
+    def __init__(self, peer: Peer, connection_manager, peers_access, squeaks_access) -> None:
         super().__init__()
         self.peer = peer
+        self.connection_manager = connection_manager
         self.peers_access = peers_access
         self.squeaks_access = squeaks_access
 
@@ -51,36 +53,28 @@ class PeerController():
         msg.nNonce = generate_nonce()
         return msg
 
+    def update(self):
+        """Keep the peer connection updated."""
+        while True:
+            logger.info('Running update thread for peer {}'.format(self.peer))
 
-# class PeerUpdater():
-#     """Handles incoming messages from peers.
-#     """
+            if not self.connection_manager.has_connection(self.peer.address):
+                return
 
-#     def __init__(self, peer: Peer, peers_access, squeaks_access, update_time_interval=UPDATE_TIME_INTERVAL) -> None:
-#         super().__init__()
-#         self.peer = peer
-#         self.peers_access = peers_access
-#         self.squeaks_access = squeaks_access
-#         self.peer_controller = PeerController(self.peer, self.peers_access, self.squeaks_access)
-#         self.update_time_interval = update_time_interval
+            # Disconnect from peer if unhealthy
+            if self.peer.has_handshake_timeout():
+                logger.info('Closing peer because of handshake timeout {}'.format(self.peer))
+                self.peer.close()
+            if self.peer.has_inactive_timeout():
+                logger.info('Closing peer because of last message timeout {}'.format(self.peer))
+                self.peer.close()
+            if self.peer.has_ping_timeout():
+                logger.info('Closing peer because of ping timeout {}'.format(self.peer))
+                self.peer.close()
 
-#     def update(self):
-#         """Keep the peer connection updated."""
+            # Check if it's time to send a ping.
+            if self.peer.is_time_for_ping():
+                self.initiate_ping()
 
-#         # Disconnect from peer if unhealthy
-#         if self.peer.has_handshake_timeout():
-#             logger.info('Closing peer because of handshake timeout {}'.format(self.peer))
-#             self.peer.close()
-#         if self.peer.has_inactive_timeout():
-#             logger.info('Closing peer because of last message timeout {}'.format(self.peer))
-#             self.peer.close()
-#         if self.peer.has_ping_timeout():
-#             logger.info('Closing peer because of ping timeout {}'.format(self.peer))
-#             self.peer.close()
-
-#         # Check if it's time to send a ping.
-#         if self.peer.is_time_for_ping():
-#             self.peer_controller.initiate_ping()
-
-#         # Sleep
-#         time.sleep(self.update_time_interval)
+            # Sleep
+            time.sleep(UPDATE_TIME_INTERVAL)
