@@ -1,3 +1,4 @@
+import threading
 import logging
 
 from squeak.messages import msg_addr
@@ -28,20 +29,53 @@ class PeerMessageHandler():
     """Handles incoming messages from peers.
     """
 
-    def __init__(self, peer: Peer, peers_access, squeaks_access) -> None:
+    def __init__(self, peer: Peer, connection_manager, peers_access, squeaks_access) -> None:
         super().__init__()
         self.peer = peer
+        self.connection_manager = connection_manager
         self.peers_access = peers_access
         self.squeaks_access = squeaks_access
         self.peer_controller = PeerController(self.peer, self.peers_access, self.squeaks_access)
+
+    def start(self):
+        """Handles all sending and receiving of messages for this peer.
+
+        This method blocks until the peer connection has stopped.
+        """
+        listen_thread = threading.Thread(
+            target=self.handle_msgs,
+        )
+
+        logger.debug('Peer thread starting... {}'.format(self.peer))
+        if self.connection_manager.add_peer(self.peer):
+            logger.debug('Peer connection added... {}'.format(self.peer))
+            listen_thread.start()
+            logger.debug('Peer listen thread started... {}'.format(self.peer))
+
+            # Initiate handshake with the peer.
+            self.peer_controller.initiate_handshake()
+
+            # Wait for the listen thread to finish
+            listen_thread.join()
+            logger.debug('Peer listen thread stopped... {}'.format(self.peer))
+
+            # Close and remove the peer before stopping.
+            self.peer.close()
+            self.connection_manager.remove_peer(self.peer)
+            logger.debug('Peer connection removed... {}'.format(self.peer))
 
     def handle_msgs(self):
         """Handles messages from the peer if there are any available.
 
         This method blocks when the peer has not sent any messages.
         """
-        for msg in self.peer.handle_recv_data():
-            self.handle_peer_message(msg)
+        while True:
+            try:
+                for msg in self.peer.handle_recv_data():
+                    self.handle_peer_message(msg)
+            except Exception as e:
+                logger.exception('Error in handle_msgs: {}'.format(e))
+                return
 
     def handle_peer_message(self, msg):
         """Handle messages from a peer with completed handshake."""
@@ -95,6 +129,7 @@ class PeerMessageHandler():
         if self.peer.remote_version is not None and self.peer.local_version is not None:
             self.peer.set_handshake_complete(True)
             # self.on_peers_changed()  # TODO: call on_peers_changed inside set_handshake_complete method.
+            self.connection_manager.on_peers_changed()
             logger.debug('Handshake complete with {}'.format(self.peer))
             self.peer_controller.initiate_ping()
             if self.peer.outgoing:
