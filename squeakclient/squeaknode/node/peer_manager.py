@@ -34,19 +34,6 @@ class PeerManager(object):
         # Start Listen thread
         threading.Thread(target=self.accept_connections).start()
 
-        # Start Update thread
-        # threading.Thread(target=self.update).start()
-
-    # def update(self):
-    #     """Periodic task that keeps peers updated."""
-    #     while True:
-    #         # Connect to more peers
-    #         if len(self.get_connected_peers()) == 0:
-    #             self.connect_seed_peers()
-
-    #         # Sleep
-    #         time.sleep(UPDATE_THREAD_SLEEP_TIME)
-
     def accept_connections(self):
         listen_socket = socket.socket()
         listen_socket.bind(('', self.port))
