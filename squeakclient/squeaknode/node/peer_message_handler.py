@@ -116,7 +116,7 @@ class PeerMessageHandler():
 
     def handle_version(self, msg):
         logger.debug('Handling version message from peer {}'.format(self.peer))
-        if msg.nNonce in self.peers_access.get_local_version_nonces():
+        if self.connection_manager.has_local_version_nonce(msg.nNonce):
             logger.debug('Closing connection because of matching nonce with peer {}'.format(self.peer))
             self.peer.close()
             return

@@ -43,6 +43,14 @@ class ConnectionManager(object):
         """Return True if the address is already connected."""
         return address in self._peers
 
+    def has_local_version_nonce(self, nonce):
+        """Return True if the nonce is one of the local version nonces."""
+        for peer in self.peers:
+            if peer.local_version:
+                if nonce == peer.local_version.nNonce:
+                    return True
+        return False
+
     def on_peers_changed(self):
         logger.info('Current number of peers {}'.format(len(self.peers)))
         logger.info('Current number of peers with handshake {}'.format(len(self.handshaked_peers)))
