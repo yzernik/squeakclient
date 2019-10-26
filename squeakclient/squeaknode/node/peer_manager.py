@@ -88,7 +88,7 @@ class PeerManager(object):
             self.add_address(seed_peer)
 
     def get_connected_peers(self):
-        return self.connection_manager.handshaked_peers
+        return self.connection_manager.peers
 
 
 def resolve_hostname(hostname):

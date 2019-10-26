@@ -33,6 +33,14 @@ class PeerController():
         self.peer.set_local_version(version)
         self.peer.send_msg(version)
 
+    def on_handshake_complete(self):
+        """Action to take upon completion of handshake with a peer."""
+        logger.debug('Handshake complete with {}'.format(self.peer))
+        if self.connection_manager.add_peer(self.peer):
+            logger.debug('Peer connection added... {}'.format(self.peer))
+        else:
+            self.peer.close()
+
     def initiate_ping(self):
         """Send a ping message and expect a pong response."""
         nonce = generate_nonce()

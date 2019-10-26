@@ -40,14 +40,14 @@ class PeerHandler():
         )
 
         logger.debug('Peer thread starting... {}'.format(peer))
-        if self.connection_manager.add_peer(peer):
-            logger.debug('Peer connection added... {}'.format(peer))
+        try:
             listen_thread.start()
             update_thread.start()
             logger.debug('Peer listen thread started... {}'.format(peer))
 
-            # Initiate handshake with the peer.
-            peer_message_handler.peer_controller.initiate_handshake()
+            # Initiate handshake with the peer if the connection is outgoing.
+            if peer.outgoing:
+                peer_message_handler.peer_controller.initiate_handshake()
 
             # Wait for the listen thread to finish
             listen_thread.join()
@@ -55,6 +55,7 @@ class PeerHandler():
 
             # Close and remove the peer before stopping.
             peer.close()
+        finally:
             self.connection_manager.remove_peer(peer)
             logger.debug('Peer connection removed... {}'.format(peer))
 

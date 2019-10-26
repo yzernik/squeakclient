@@ -26,14 +26,6 @@ class ConnectionManager(object):
     def peers(self):
         return list(self._peers.values())
 
-    @property
-    def handshaked_peers(self):
-        return [
-            peer
-            for peer in self.peers
-            if peer.handshake_complete
-        ]
-
     def has_connection(self, address):
         """Return True if the address is already connected."""
         return address in self._peers
@@ -48,7 +40,6 @@ class ConnectionManager(object):
 
     def on_peers_changed(self):
         logger.info('Current number of peers {}'.format(len(self.peers)))
-        logger.info('Current number of peers with handshake {}'.format(len(self.handshaked_peers)))
         if self.peers_changed_callback:
             peers = self.get_connected_peers()
             self.peers_changed_callback(peers)
@@ -84,4 +75,4 @@ class ConnectionManager(object):
 
     def need_more_peers(self):
         """Return True if more peers are needed."""
-        return len(self.handshaked_peers) < self.max_peers
+        return len(self.peers) < self.max_peers
