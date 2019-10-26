@@ -1,3 +1,4 @@
+import time
 import logging
 
 from squeak.messages import msg_ping
@@ -18,10 +19,11 @@ class PeerController():
     """Commands for interacting with remote peer.
     """
 
-    def __init__(self, peer: Peer, peers_access, squeaks_access) -> None:
+    def __init__(self, peer: Peer, connection_manager, peer_manager, squeaks_access) -> None:
         super().__init__()
         self.peer = peer
-        self.peers_access = peers_access
+        self.connection_manager = connection_manager
+        self.peer_manager = peer_manager
         self.squeaks_access = squeaks_access
 
     def initiate_handshake(self):
@@ -30,6 +32,14 @@ class PeerController():
         version = self.version_pkt()
         self.peer.set_local_version(version)
         self.peer.send_msg(version)
+
+    def on_handshake_complete(self):
+        """Action to take upon completion of handshake with a peer."""
+        logger.debug('Handshake complete with {}'.format(self.peer))
+        if self.connection_manager.add_peer(self.peer):
+            logger.debug('Peer connection added... {}'.format(self.peer))
+        else:
+            self.peer.close()
 
     def initiate_ping(self):
         """Send a ping message and expect a pong response."""
@@ -41,7 +51,7 @@ class PeerController():
 
     def version_pkt(self):
         msg = msg_version()
-        local_ip, local_port = self.peers_access.get_local_ip_port()
+        local_ip, local_port = self.peer_manager.ip, self.peer_manager.port
         server_ip, server_port = self.peer.address
         msg.nVersion = HANDSHAKE_VERSION
         msg.addrTo.ip = server_ip
@@ -51,36 +61,28 @@ class PeerController():
         msg.nNonce = generate_nonce()
         return msg
 
+    def update(self):
+        """Keep the peer connection updated."""
+        while True:
+            logger.info('Running update thread for peer {}'.format(self.peer))
 
-# class PeerUpdater():
-#     """Handles incoming messages from peers.
-#     """
+            if not self.connection_manager.has_connection(self.peer.address):
+                return
 
-#     def __init__(self, peer: Peer, peers_access, squeaks_access, update_time_interval=UPDATE_TIME_INTERVAL) -> None:
-#         super().__init__()
-#         self.peer = peer
-#         self.peers_access = peers_access
-#         self.squeaks_access = squeaks_access
-#         self.peer_controller = PeerController(self.peer, self.peers_access, self.squeaks_access)
-#         self.update_time_interval = update_time_interval
+            # Disconnect from peer if unhealthy
+            if self.peer.has_handshake_timeout():
+                logger.info('Closing peer because of handshake timeout {}'.format(self.peer))
+                self.peer.close()
+            if self.peer.has_inactive_timeout():
+                logger.info('Closing peer because of last message timeout {}'.format(self.peer))
+                self.peer.close()
+            if self.peer.has_ping_timeout():
+                logger.info('Closing peer because of ping timeout {}'.format(self.peer))
+                self.peer.close()
 
-#     def update(self):
-#         """Keep the peer connection updated."""
+            # Check if it's time to send a ping.
+            if self.peer.is_time_for_ping():
+                self.initiate_ping()
 
-#         # Disconnect from peer if unhealthy
-#         if self.peer.has_handshake_timeout():
-#             logger.info('Closing peer because of handshake timeout {}'.format(self.peer))
-#             self.peer.close()
-#         if self.peer.has_inactive_timeout():
-#             logger.info('Closing peer because of last message timeout {}'.format(self.peer))
-#             self.peer.close()
-#         if self.peer.has_ping_timeout():
-#             logger.info('Closing peer because of ping timeout {}'.format(self.peer))
-#             self.peer.close()
-
-#         # Check if it's time to send a ping.
-#         if self.peer.is_time_for_ping():
-#             self.peer_controller.initiate_ping()
-
-#         # Sleep
-#         time.sleep(self.update_time_interval)
+            # Sleep
+            time.sleep(UPDATE_TIME_INTERVAL)

@@ -1,8 +1,5 @@
 import logging
-import socket
 import threading
-
-import squeak.params
 
 
 MIN_PEERS = 5
@@ -23,29 +20,26 @@ class ConnectionManager(object):
         self.max_peers = max_peers
         self.peers_lock = threading.Lock()
         self.peers_changed_callback = None
-        self.ip = socket.gethostbyname('localhost')
-        self.port = port or squeak.params.params.DEFAULT_PORT
         self.peer_msg_handler = None
 
     @property
     def peers(self):
         return list(self._peers.values())
 
-    @property
-    def handshaked_peers(self):
-        return [
-            peer
-            for peer in self.peers
-            if peer.handshake_complete
-        ]
-
     def has_connection(self, address):
         """Return True if the address is already connected."""
         return address in self._peers
 
-    def on_peers_changed(self):
+    def has_local_version_nonce(self, nonce):
+        """Return True if the nonce is one of the local version nonces."""
+        for peer in self.peers:
+            if peer.local_version:
+                if nonce == peer.local_version.nNonce:
+                    return True
+        return False
+
+    def _on_peers_changed(self):
         logger.info('Current number of peers {}'.format(len(self.peers)))
-        logger.info('Current number of peers with handshake {}'.format(len(self.handshaked_peers)))
         if self.peers_changed_callback:
             peers = self.get_connected_peers()
             self.peers_changed_callback(peers)
@@ -66,7 +60,7 @@ class ConnectionManager(object):
                     return False
             self._peers[peer.address] = peer
             logger.debug('Added peer {}'.format(peer))
-            self.on_peers_changed()
+            self._on_peers_changed()
             return True
 
     def remove_peer(self, peer):
@@ -77,8 +71,8 @@ class ConnectionManager(object):
         with self.peers_lock:
             del self._peers[peer.address]
             logger.debug('Removed peer {}'.format(peer))
-            self.on_peers_changed()
+            self._on_peers_changed()
 
     def need_more_peers(self):
         """Return True if more peers are needed."""
-        return len(self.handshaked_peers) < self.max_peers
+        return len(self.peers) < self.max_peers

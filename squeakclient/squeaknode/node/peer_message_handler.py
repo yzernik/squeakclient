@@ -24,16 +24,12 @@ PING_INTERVAL = 60
 HANDSHAKE_VERSION = 70002
 
 
-class PeerMessageHandler():
+class PeerMessageHandler(PeerController):
     """Handles incoming messages from peers.
     """
 
-    def __init__(self, peer: Peer, peers_access, squeaks_access) -> None:
-        super().__init__()
-        self.peer = peer
-        self.peers_access = peers_access
-        self.squeaks_access = squeaks_access
-        self.peer_controller = PeerController(self.peer, self.peers_access, self.squeaks_access)
+    def __init__(self, peer: Peer, connection_manager, peer_manager, squeaks_access) -> None:
+        super().__init__(peer, connection_manager, peer_manager, squeaks_access)
 
     def handle_msgs(self):
         """Handles messages from the peer if there are any available.
@@ -77,26 +73,23 @@ class PeerMessageHandler():
             self.handle_notfound(msg)
 
     def handle_version(self, msg):
-        logger.debug('Handling version message from peer {}'.format(self.peer))
-        if msg.nNonce in self.peers_access.get_local_version_nonces():
+        if self.connection_manager.has_local_version_nonce(msg.nNonce):
             logger.debug('Closing connection because of matching nonce with peer {}'.format(self.peer))
             self.peer.close()
             return
 
         self.peer.set_remote_version(msg)
         if self.peer.local_version is None:
-            version = self.peer_controller.version_pkt()
+            version = self.version_pkt()
             self.peer.set_local_version(version)
             self.peer.send_msg(version)
         self.peer.send_msg(msg_verack())
 
     def handle_verack(self, msg):
-        logger.debug('Handling verack message from peer {}'.format(self.peer))
         if self.peer.remote_version is not None and self.peer.local_version is not None:
             self.peer.set_handshake_complete(True)
-            # self.on_peers_changed()  # TODO: call on_peers_changed inside set_handshake_complete method.
-            logger.debug('Handshake complete with {}'.format(self.peer))
-            self.peer_controller.initiate_ping()
+            self.on_handshake_complete()
+            self.initiate_ping()
             if self.peer.outgoing:
                 self.peer.send_msg(msg_getaddr())
 
@@ -112,10 +105,10 @@ class PeerMessageHandler():
 
     def handle_addr(self, msg):
         for addr in msg.addrs:
-            self.peers_access.add_address((addr.ip, addr.port))
+            self.peer_manager.add_address((addr.ip, addr.port))
 
     def handle_getaddr(self, msg):
-        peers = self.peers_access.get_connected_peers()
+        peers = self.connection_manager.peers
         addresses = [peer.caddress for peer in peers
                      if peer.outgoing]
         addr_msg = msg_addr(addrs=addresses)
