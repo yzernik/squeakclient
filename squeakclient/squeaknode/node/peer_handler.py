@@ -1,7 +1,9 @@
+import time
 import threading
 import logging
 
 from squeakclient.squeaknode.node.peer_message_handler import PeerMessageHandler
+from squeakclient.squeaknode.node.peer_controller import PeerController
 
 
 logger = logging.getLogger(__name__)
@@ -30,24 +32,27 @@ class PeerHandler():
         This method blocks until the peer connection has stopped.
         """
         peer_message_handler = PeerMessageHandler(peer, self.connection_manager, self.peer_manager, self.squeaks_access)
+        peer_handshaker = PeerHandshaker(peer, self.connection_manager, self.peer_manager, self.squeaks_access)
         peer_listener = PeerListener(peer_message_handler)
 
         listen_thread = threading.Thread(
             target=peer_listener.handle_msgs,
         )
-        update_thread = threading.Thread(
-            target=peer_message_handler.peer_controller.update,
+        handshaker_thread = threading.Thread(
+            target=peer_handshaker.hanshake,
         )
+        # update_thread = threading.Thread(
+        #     target=peer_message_handler.peer_controller.update,
+        # )
 
         logger.debug('Peer thread starting... {}'.format(peer))
         try:
             listen_thread.start()
-            update_thread.start()
+            # update_thread.start()
             logger.debug('Peer listen thread started... {}'.format(peer))
 
-            # Initiate handshake with the peer if the connection is outgoing.
-            if peer.outgoing:
-                peer_message_handler.peer_controller.initiate_handshake()
+            # Do the handshake.
+            handshaker_thread.start()
 
             # Wait for the listen thread to finish
             listen_thread.join()
@@ -75,3 +80,41 @@ class PeerListener():
             except Exception as e:
                 logger.exception('Error in handle_msgs: {}'.format(e))
                 return
+
+
+class PeerHandshaker(PeerController):
+    """Handles the peer handshake.
+    """
+
+    def __init__(self, peer, connection_manager, peer_manager, squeaks_access) -> None:
+        super().__init__(peer, connection_manager, peer_manager, squeaks_access)
+
+    def hanshake(self):
+        # Initiate handshake with the peer if the connection is outgoing.
+        if self.peer.outgoing:
+            self.initiate_handshake()
+
+        # Sleep for 10 seconds.
+        time.sleep(10)
+
+        # Disconnect from peer if handshake is not complete.
+        if self.peer.has_handshake_timeout():
+            logger.info('Closing peer because of handshake timeout {}'.format(self.peer))
+            self.peer.close()
+
+
+# class PeerPingChecker():
+#     """Handles receiving messages from a peer.
+#     """
+
+#     def __init__(self, peer_message_handler) -> None:
+#         super().__init__()
+#         self.peer_message_handler = peer_message_handler
+
+#     def handle_msgs(self):
+#         while True:
+#             try:
+#                 self.peer_message_handler.handle_msgs()
+#             except Exception as e:
+#                 logger.exception('Error in handle_msgs: {}'.format(e))
+#                 return

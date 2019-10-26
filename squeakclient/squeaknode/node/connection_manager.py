@@ -38,7 +38,7 @@ class ConnectionManager(object):
                     return True
         return False
 
-    def on_peers_changed(self):
+    def _on_peers_changed(self):
         logger.info('Current number of peers {}'.format(len(self.peers)))
         if self.peers_changed_callback:
             peers = self.get_connected_peers()
@@ -60,7 +60,7 @@ class ConnectionManager(object):
                     return False
             self._peers[peer.address] = peer
             logger.debug('Added peer {}'.format(peer))
-            self.on_peers_changed()
+            self._on_peers_changed()
             return True
 
     def remove_peer(self, peer):
@@ -71,7 +71,7 @@ class ConnectionManager(object):
         with self.peers_lock:
             del self._peers[peer.address]
             logger.debug('Removed peer {}'.format(peer))
-            self.on_peers_changed()
+            self._on_peers_changed()
 
     def need_more_peers(self):
         """Return True if more peers are needed."""
