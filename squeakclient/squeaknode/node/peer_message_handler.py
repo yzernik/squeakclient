@@ -32,12 +32,11 @@ class PeerMessageHandler:
     """Handles incoming messages from peers.
     """
 
-    def __init__(self, peer: Peer, connection_manager, peer_manager, squeaks_access, handshake_started, handshake_complete) -> None:
+    def __init__(self, peer: Peer, connection_manager, peer_manager, squeaks_access, handshake_complete) -> None:
         self.peer = peer
         self.connection_manager = connection_manager
         self.peer_manager = peer_manager
         self.squeaks_access = squeaks_access
-        self.handshake_started = handshake_started
         self.handshake_complete = handshake_complete
 
     def initiate_handshake(self):
@@ -46,7 +45,6 @@ class PeerMessageHandler:
         version = self.version_pkt()
         self.peer.set_local_version(version)
         self.peer.send_msg(version)
-        self.handshake_started.set()
 
     def on_handshake_complete(self):
         """Action to take upon completion of handshake with a peer."""

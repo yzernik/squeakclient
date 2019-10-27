@@ -22,15 +22,14 @@ class PeerController():
         self.peer = peer
         self.connection_manager = connection_manager
 
-        self.handshake_started = threading.Event()
         self.handshake_complete = threading.Event()
         self.ping_started = threading.Event()
         self.ping_complete = threading.Event()
         self.stop = threading.Event()
 
-        self.peer_message_handler = PeerMessageHandler(peer, connection_manager, peer_manager, squeaks_access, self.handshake_started, self.handshake_complete)
+        self.peer_message_handler = PeerMessageHandler(peer, connection_manager, peer_manager, squeaks_access, self.handshake_complete)
         self.peer_listener = PeerListener(self.peer_message_handler)
-        self.peer_handshaker = PeerHandshaker(self.peer, self.peer_message_handler, self.handshake_started, self.handshake_complete)
+        self.peer_handshaker = PeerHandshaker(self.peer, self.peer_message_handler, self.handshake_complete)
         # peer_handshaker = PeerHandshaker(peer, self.connection_manager, self.peer_manager, self.squeaks_access)
 
         self.listen_thread = threading.Thread(
@@ -88,18 +87,17 @@ class PeerHandshaker:
     """Handles receiving messages from a peer.
     """
 
-    def __init__(self, peer, peer_message_handler, handshake_started, handshake_complete) -> None:
+    def __init__(self, peer, peer_message_handler, handshake_complete) -> None:
         self.peer = peer
         self.peer_message_handler = peer_message_handler
-        self.handshake_started = handshake_started
         self.handshake_complete = handshake_complete
 
     def start(self):
         # Start the handshake.
         if self.peer.outgoing:
             self.peer_message_handler.initiate_handshake()
-        self.handshake_started.set()
 
+        # Wait for the handshake to complete.
         handshake_result = self.handshake_complete.wait(HANDSHAKE_TIMEOUT)
         if handshake_result:
             logger.debug('Handshake success')
