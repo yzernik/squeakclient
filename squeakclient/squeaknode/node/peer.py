@@ -32,12 +32,16 @@ class Peer(object):
         self._connect_time = time_now
         self._local_version = None
         self._remote_version = None
-        self._handshake_complete = False
         self._message_decoder = MessageDecoder()
         self._last_msg_revc_time = time_now
         self._last_sent_ping_nonce = None
         self._last_sent_ping_time = None
         self._last_recv_ping_time = None
+
+        self._handshake_complete = threading.Event()
+        self.ping_started = threading.Event()
+        self.ping_complete = threading.Event()
+        self.stop = threading.Event()
 
     @property
     def nVersion(self):
@@ -87,10 +91,10 @@ class Peer(object):
 
     @property
     def handshake_complete(self):
-        return self._handshake_complete
+        return self._handshake_complete.is_set()
 
-    def set_handshake_complete(self, handshake_complete):
-        self._handshake_complete = handshake_complete
+    def set_handshake_complete(self):
+        self._handshake_complete.set()
 
     @property
     def last_msg_revc_time(self):
@@ -138,45 +142,39 @@ class Peer(object):
         with self._peer_socket_lock:
             self._peer_socket.send(data)
 
-    def has_handshake_timeout(self):
-        """Return True if the handshake has timed out."""
-        if self._handshake_complete:
-            return False
-        return time.time() - self._connect_time > HANDSHAKE_TIMEOUT
+    # def has_inactive_timeout(self):
+    #     """Return True if the last message received time has timed out."""
+    #     if not self._handshake_complete:
+    #         return False
+    #     if self._last_msg_revc_time is None:
+    #         return False
+    #     return time.time() - self._last_msg_revc_time > LAST_MESSAGE_TIMEOUT
 
-    def has_inactive_timeout(self):
-        """Return True if the last message received time has timed out."""
-        if not self._handshake_complete:
-            return False
-        if self._last_msg_revc_time is None:
-            return False
-        return time.time() - self._last_msg_revc_time > LAST_MESSAGE_TIMEOUT
+    # def has_ping_timeout(self):
+    #     """Return True if the ping has timed out."""
+    #     if not self._handshake_complete:
+    #         return False
+    #     last_sent_ping_nonce = self._last_sent_ping_nonce
+    #     last_sent_ping_time = self._last_sent_ping_time
+    #     if last_sent_ping_nonce is None:
+    #         return False
+    #     if last_sent_ping_time is None:
+    #         return False
+    #     return time.time() - last_sent_ping_time > PING_TIMEOUT
 
-    def has_ping_timeout(self):
-        """Return True if the ping has timed out."""
-        if not self._handshake_complete:
-            return False
-        last_sent_ping_nonce = self._last_sent_ping_nonce
-        last_sent_ping_time = self._last_sent_ping_time
-        if last_sent_ping_nonce is None:
-            return False
-        if last_sent_ping_time is None:
-            return False
-        return time.time() - last_sent_ping_time > PING_TIMEOUT
+    # def is_time_for_ping(self):
+    #     """Return True if a ping message needs to be sent."""
+    #     if not self._handshake_complete:
+    #         return False
+    #     last_sent_ping_time = self._last_sent_ping_time
+    #     if last_sent_ping_time is None:
+    #         return True
+    #     return time.time() - last_sent_ping_time > PING_INTERVAL
 
-    def is_time_for_ping(self):
-        """Return True if a ping message needs to be sent."""
-        if not self._handshake_complete:
-            return False
-        last_sent_ping_time = self._last_sent_ping_time
-        if last_sent_ping_time is None:
-            return True
-        return time.time() - last_sent_ping_time > PING_INTERVAL
-
-    def set_pong_response(self, nonce):
-        """Update the status of the peer with the nonce from a pong message."""
-        if nonce == self._last_sent_ping_nonce:
-            self._last_sent_ping_nonce = None
+    # def set_pong_response(self, nonce):
+    #     """Update the status of the peer with the nonce from a pong message."""
+    #     if nonce == self._last_sent_ping_nonce:
+    #         self._last_sent_ping_nonce = None
 
     def __repr__(self):
         return "Peer(%s)" % (self.address_string)

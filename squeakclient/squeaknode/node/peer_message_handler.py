@@ -32,12 +32,11 @@ class PeerMessageHandler:
     """Handles incoming messages from peers.
     """
 
-    def __init__(self, peer: Peer, connection_manager, peer_manager, squeaks_access, handshake_complete) -> None:
+    def __init__(self, peer: Peer, connection_manager, peer_manager, squeaks_access) -> None:
         self.peer = peer
         self.connection_manager = connection_manager
         self.peer_manager = peer_manager
         self.squeaks_access = squeaks_access
-        self.handshake_complete = handshake_complete
 
     def initiate_handshake(self):
         """Action to take upon completion of handshake with a peer."""
@@ -50,7 +49,7 @@ class PeerMessageHandler:
         """Action to take upon completion of handshake with a peer."""
         logger.debug('Handshake complete with {}'.format(self.peer))
         logger.debug('Setting handshake complete flag with peer {}'.format(self.peer))
-        self.handshake_complete.set()
+        self.peer._handshake_complete.set()
         if self.connection_manager.add_peer(self.peer):
             logger.debug('Peer connection added... {}'.format(self.peer))
         else:
@@ -132,7 +131,7 @@ class PeerMessageHandler:
 
     def handle_verack(self, msg):
         if self.peer.remote_version is not None and self.peer.local_version is not None:
-            self.peer.set_handshake_complete(True)
+            self.peer.set_handshake_complete()
             self.on_handshake_complete()
             # self.initiate_ping()
             if self.peer.outgoing:
