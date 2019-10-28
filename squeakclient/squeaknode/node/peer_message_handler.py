@@ -55,9 +55,7 @@ class PeerMessageHandler(PeerCommunicator):
     #         self.peer.close()
 
     def start(self):
-        logger.debug('Peer message handler running start... {}'.format(self.peer))
-        # while not self.peer.stopped.is_set():
-        while True:
+        while not self.peer.stopped.is_set():
             try:
                 self.handle_msgs()
             except Exception as e:
