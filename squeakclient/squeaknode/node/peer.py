@@ -41,7 +41,7 @@ class Peer(object):
         self._handshake_complete = threading.Event()
         self.ping_started = threading.Event()
         self.ping_complete = threading.Event()
-        self.stop = threading.Event()
+        self.stopped = threading.Event()
 
     @property
     def nVersion(self):
@@ -130,6 +130,10 @@ class Peer(object):
             self._last_msg_revc_time = time.time()
             logger.debug('Received msg {} from {}'.format(msg, self))
             yield msg
+
+    def stop(self):
+        logger.info("Stopping peer: {}".format(self))
+        self.stopped.set()
 
     def close(self):
         logger.info("closing peer socket: {}".format(self._peer_socket))

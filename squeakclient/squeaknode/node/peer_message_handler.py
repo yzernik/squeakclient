@@ -1,7 +1,6 @@
 import logging
 
 from squeak.messages import msg_addr
-from squeak.messages import msg_getaddr
 from squeak.messages import msg_getdata
 from squeak.messages import msg_inv
 from squeak.messages import msg_notfound
@@ -11,11 +10,11 @@ from squeak.messages import msg_verack
 from squeak.net import CInv
 
 from squeak.messages import msg_ping
-from squeak.messages import msg_version
 
 from squeakclient.squeaknode.util import generate_nonce
 
 from squeakclient.squeaknode.node.peer import Peer
+from squeakclient.squeaknode.node.peer_communicator import PeerCommunicator
 
 
 logger = logging.getLogger(__name__)
@@ -28,32 +27,32 @@ PING_INTERVAL = 60
 HANDSHAKE_VERSION = 70002
 
 
-class PeerMessageHandler:
+class PeerMessageHandler(PeerCommunicator):
     """Handles incoming messages from peers.
     """
 
-    def __init__(self, peer: Peer, connection_manager, peer_manager, squeaks_access) -> None:
-        self.peer = peer
+    def __init__(self, peer: Peer, connection_manager, peer_manager, squeaks_access):
+        super().__init__(peer, peer_manager)
         self.connection_manager = connection_manager
         self.peer_manager = peer_manager
         self.squeaks_access = squeaks_access
 
-    def initiate_handshake(self):
-        """Action to take upon completion of handshake with a peer."""
-        logger.debug('Starting handshake with {}'.format(self.peer))
-        version = self.version_pkt()
-        self.peer.set_local_version(version)
-        self.peer.send_msg(version)
+    # def initiate_handshake(self):
+    #     """Action to take upon completion of handshake with a peer."""
+    #     logger.debug('Starting handshake with {}'.format(self.peer))
+    #     version = self.version_pkt()
+    #     self.peer.set_local_version(version)
+    #     self.peer.send_msg(version)
 
-    def on_handshake_complete(self):
-        """Action to take upon completion of handshake with a peer."""
-        logger.debug('Handshake complete with {}'.format(self.peer))
-        logger.debug('Setting handshake complete flag with peer {}'.format(self.peer))
-        self.peer._handshake_complete.set()
-        if self.connection_manager.add_peer(self.peer):
-            logger.debug('Peer connection added... {}'.format(self.peer))
-        else:
-            self.peer.close()
+    # def on_handshake_complete(self):
+    #     """Action to take upon completion of handshake with a peer."""
+    #     logger.debug('Handshake complete with {}'.format(self.peer))
+    #     logger.debug('Setting handshake complete flag with peer {}'.format(self.peer))
+    #     self.peer._handshake_complete.set()
+    #     if self.connection_manager.add_peer(self.peer):
+    #         logger.debug('Peer connection added... {}'.format(self.peer))
+    #     else:
+    #         self.peer.close()
 
     def initiate_ping(self):
         """Send a ping message and expect a pong response."""
@@ -62,18 +61,6 @@ class PeerMessageHandler:
         ping.nonce = nonce
         self.peer.send_msg(ping)
         self.peer.set_last_sent_ping(nonce)
-
-    def version_pkt(self):
-        msg = msg_version()
-        local_ip, local_port = self.peer_manager.ip, self.peer_manager.port
-        server_ip, server_port = self.peer.address
-        msg.nVersion = HANDSHAKE_VERSION
-        msg.addrTo.ip = server_ip
-        msg.addrTo.port = server_port
-        msg.addrFrom.ip = local_ip
-        msg.addrFrom.port = local_port
-        msg.nNonce = generate_nonce()
-        return msg
 
     def handle_msgs(self):
         """Handles messages from the peer if there are any available.
@@ -131,11 +118,11 @@ class PeerMessageHandler:
 
     def handle_verack(self, msg):
         if self.peer.remote_version is not None and self.peer.local_version is not None:
+
+            logger.debug('Handshake complete with {}'.format(self.peer))
+            logger.debug('Setting handshake complete flag with peer {}'.format(self.peer))
             self.peer.set_handshake_complete()
-            self.on_handshake_complete()
-            # self.initiate_ping()
-            if self.peer.outgoing:
-                self.peer.send_msg(msg_getaddr())
+            # self.peer._handshake_complete.set()
 
     def handle_ping(self, msg):
         nonce = msg.nonce

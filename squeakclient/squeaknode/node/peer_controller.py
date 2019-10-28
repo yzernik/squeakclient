@@ -4,6 +4,9 @@ import logging
 from squeakclient.squeaknode.node.peer import Peer
 from squeakclient.squeaknode.node.peer_message_handler import PeerMessageHandler
 
+from squeakclient.squeaknode.node.peer_communicator import PeerCommunicator
+from squeak.messages import msg_getaddr
+
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +27,7 @@ class PeerController():
 
         self.peer_message_handler = PeerMessageHandler(peer, connection_manager, peer_manager, squeaks_access)
         self.peer_listener = PeerListener(self.peer_message_handler)
-        self.peer_handshaker = PeerHandshaker(self.peer, self.peer_message_handler)
+        self.peer_handshaker = PeerHandshaker(self.peer, peer_manager, connection_manager)
         # peer_handshaker = PeerHandshaker(peer, self.connection_manager, self.peer_manager, self.squeaks_access)
 
         self.listen_thread = threading.Thread(
@@ -78,22 +81,42 @@ class PeerListener:
                 return
 
 
-class PeerHandshaker:
+class PeerHandshaker(PeerCommunicator):
     """Handles receiving messages from a peer.
     """
 
-    def __init__(self, peer, peer_message_handler) -> None:
-        self.peer = peer
-        self.peer_message_handler = peer_message_handler
+    def __init__(self, peer, peer_manager, connection_manager):
+        super().__init__(peer, peer_manager)
+        self.connection_manager = connection_manager
 
     def start(self):
         # Start the handshake.
         if self.peer.outgoing:
-            self.peer_message_handler.initiate_handshake()
+            self.initiate_handshake()
 
         # Wait for the handshake to complete.
         handshake_result = self.peer._handshake_complete.wait(HANDSHAKE_TIMEOUT)
+        if self.peer.stopped.is_set():
+            return
         if handshake_result:
             logger.debug('Handshake success')
+            self.on_handshake_complete()
         else:
             logger.debug('Handshake failure')
+            self.peer.stop()
+
+    def initiate_handshake(self):
+        """Action to take upon completion of handshake with a peer."""
+        logger.debug('Starting handshake with {}'.format(self.peer))
+        version = self.version_pkt()
+        self.peer.set_local_version(version)
+        self.peer.send_msg(version)
+
+    def on_handshake_complete(self):
+        if self.connection_manager.add_peer(self.peer):
+            logger.debug('Peer connection added... {}'.format(self.peer))
+        else:
+            self.peer.close()
+        # self.initiate_ping()
+        if self.peer.outgoing:
+            self.peer.send_msg(msg_getaddr())
