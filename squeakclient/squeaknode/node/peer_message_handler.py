@@ -54,6 +54,16 @@ class PeerMessageHandler(PeerCommunicator):
     #     else:
     #         self.peer.close()
 
+    def start(self):
+        logger.debug('Peer message handler running start... {}'.format(self.peer))
+        # while not self.peer.stopped.is_set():
+        while True:
+            try:
+                self.handle_msgs()
+            except Exception as e:
+                logger.exception('Error in handle_msgs: {}'.format(e))
+                return
+
     def initiate_ping(self):
         """Send a ping message and expect a pong response."""
         nonce = generate_nonce()

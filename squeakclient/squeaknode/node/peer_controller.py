@@ -26,12 +26,11 @@ class PeerController():
         self.connection_manager = connection_manager
 
         self.peer_message_handler = PeerMessageHandler(peer, connection_manager, peer_manager, squeaks_access)
-        self.peer_listener = PeerListener(self.peer_message_handler)
         self.peer_handshaker = PeerHandshaker(self.peer, peer_manager, connection_manager)
         # peer_handshaker = PeerHandshaker(peer, self.connection_manager, self.peer_manager, self.squeaks_access)
 
-        self.listen_thread = threading.Thread(
-            target=self.peer_listener.listen_msgs,
+        self.message_handler_thread = threading.Thread(
+            target=self.peer_message_handler.start,
         )
         self.handshaker_thread = threading.Thread(
             target=self.peer_handshaker.start,
@@ -43,19 +42,14 @@ class PeerController():
     def start(self):
         logger.debug('Peer thread starting... {}'.format(self.peer))
         try:
-            self.listen_thread.start()
-            self.peer_handshaker.start()
-            # update_thread.start()
-            logger.debug('Peer listen thread started... {}'.format(self.peer))
+            self.message_handler_thread.start()
+            logger.debug('Peer message handler thread started... {}'.format(self.peer))
+            self.handshaker_thread.start()
             logger.debug('Peer handshaker thread started... {}'.format(self.peer))
 
-            # # Do the handshake.
-            # handshaker_thread.start()
-            # peer_message_handler.initiate_handshake()
-
             # Wait for the listen thread to finish
-            self.listen_thread.join()
-            logger.debug('Peer listen thread stopped... {}'.format(self.peer))
+            self.message_handler_thread.join()
+            logger.debug('Peer message handler thread stopped... {}'.format(self.peer))
 
             # Close and remove the peer before stopping.
             self.peer.close()
@@ -64,21 +58,21 @@ class PeerController():
             logger.debug('Peer connection removed... {}'.format(self.peer))
 
 
-class PeerListener:
-    """Handles receiving messages from a peer.
-    """
+# class PeerListener:
+#     """Handles receiving messages from a peer.
+#     """
 
-    def __init__(self, peer_message_handler) -> None:
-        super().__init__()
-        self.peer_message_handler = peer_message_handler
+#     def __init__(self, peer_message_handler) -> None:
+#         super().__init__()
+#         self.peer_message_handler = peer_message_handler
 
-    def listen_msgs(self):
-        while True:
-            try:
-                self.peer_message_handler.handle_msgs()
-            except Exception as e:
-                logger.exception('Error in handle_msgs: {}'.format(e))
-                return
+#     def listen_msgs(self):
+#         while True:
+#             try:
+#                 self.peer_message_handler.handle_msgs()
+#             except Exception as e:
+#                 logger.exception('Error in handle_msgs: {}'.format(e))
+#                 return
 
 
 class PeerHandshaker(PeerCommunicator):
