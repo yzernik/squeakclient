@@ -14,17 +14,18 @@ class ConnectionManager(object):
     """Maintains connections to other peers in the network.
     """
 
-    def __init__(self, min_peers=MIN_PEERS, max_peers=MAX_PEERS, port=None):
+    def __init__(self):
         self._peers = {}
-        self.min_peers = min_peers
-        self.max_peers = max_peers
         self.peers_lock = threading.Lock()
         self.peers_changed_callback = None
-        self.peer_msg_handler = None
 
     @property
     def peers(self):
-        return list(self._peers.values())
+        return [
+            peer
+            for peer in list(self._peers.values())
+            if peer.handshake_complete
+        ]
 
     def has_connection(self, address):
         """Return True if the address is already connected."""
@@ -38,7 +39,7 @@ class ConnectionManager(object):
                     return True
         return False
 
-    def _on_peers_changed(self):
+    def on_peers_changed(self):
         logger.info('Current number of peers {}'.format(len(self.peers)))
         if self.peers_changed_callback:
             peers = self.get_connected_peers()
@@ -49,30 +50,35 @@ class ConnectionManager(object):
 
     def add_peer(self, peer):
         """Add a peer.
-
-        Return True if successfully added.
         """
         with self.peers_lock:
-            if peer.outgoing:
-                if len(self.peers) >= self.max_peers or self.has_connection(peer.address):
-                    peer.close()
-                    logger.debug('Failed to connect to peer {}'.format(peer))
-                    return False
+            if self.has_connection(peer.address):
+                logger.debug('Failed to add peer {}'.format(peer))
+                raise DuplicatePeerError()
             self._peers[peer.address] = peer
             logger.debug('Added peer {}'.format(peer))
-            self._on_peers_changed()
-            return True
+            self.on_peers_changed()
 
     def remove_peer(self, peer):
         """Add a peer.
-
-        Return True if successfully added.
         """
         with self.peers_lock:
-            del self._peers[peer.address]
-            logger.debug('Removed peer {}'.format(peer))
-            self._on_peers_changed()
+            if not self.has_connection(peer.address):
+                logger.debug('Failed to remove peer {}'.format(peer))
+                raise MissingPeerError()
+            else:
+                del self._peers[peer.address]
+                logger.debug('Removed peer {}'.format(peer))
+                self.on_peers_changed()
 
     def need_more_peers(self):
         """Return True if more peers are needed."""
         return len(self.peers) < self.max_peers
+
+
+class DuplicatePeerError(Exception):
+    pass
+
+
+class MissingPeerError(Exception):
+    pass

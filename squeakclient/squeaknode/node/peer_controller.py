@@ -57,6 +57,14 @@ class PeerController():
             self.connection_manager.remove_peer(self.peer)
             logger.debug('Peer connection removed... {}'.format(self.peer))
 
+    def __enter__(self):
+        self.connection_manager.add_peer(self.peer)
+        logger.debug('Peer connection added... {}'.format(self.peer))
+        return self
+
+    def __exit__(self, *exc):
+        self.connection_manager.remove_peer(self.peer)
+        logger.debug('Peer connection removed... {}'.format(self.peer))
 
 # class PeerListener:
 #     """Handles receiving messages from a peer.
@@ -107,10 +115,7 @@ class PeerHandshaker(PeerCommunicator):
         self.peer.send_msg(version)
 
     def on_handshake_complete(self):
-        if self.connection_manager.add_peer(self.peer):
-            logger.debug('Peer connection added... {}'.format(self.peer))
-        else:
-            self.peer.close()
+        self.connection_manager.on_peers_changed()
         # self.initiate_ping()
         if self.peer.outgoing:
             self.peer.send_msg(msg_getaddr())

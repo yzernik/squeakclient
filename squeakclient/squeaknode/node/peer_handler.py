@@ -30,7 +30,8 @@ class PeerHandler():
         """
         logger.debug('Setting up controller for peer {} ...'.format(peer))
         peer_controller = PeerController(peer, self.connection_manager, self.peer_manager, self.squeaks_access)
-        peer_controller.start()
+        with peer_controller as pc:
+            pc.start()
         logger.debug('Stopped controller for peer {}.'.format(peer))
 
 
