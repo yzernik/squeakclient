@@ -42,7 +42,7 @@ class ClientSqueakNode(object):
         return (self.peer_manager.ip, self.peer_manager.port)
 
     def is_valid_remote_nonce(self, nonce):
-        return self.connection_manager.has_local_version_nonce(nonce)
+        return not self.connection_manager.has_local_version_nonce(nonce)
 
     def get_signing_key(self):
         return self.signing_key_access.get_signing_key()
