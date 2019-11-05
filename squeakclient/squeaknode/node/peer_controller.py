@@ -1,16 +1,17 @@
-import time
+import threading
 import logging
 
-from squeak.messages import msg_ping
-from squeak.messages import msg_version
-
-from squeakclient.squeaknode.util import generate_nonce
 from squeakclient.squeaknode.node.peer import Peer
+from squeakclient.squeaknode.node.peer_message_handler import PeerMessageHandler
+
+from squeakclient.squeaknode.node.peer_communicator import PeerCommunicator
+from squeak.messages import msg_getaddr
 
 
 logger = logging.getLogger(__name__)
 
 
+HANDSHAKE_TIMEOUT = 30
 UPDATE_TIME_INTERVAL = 10
 HANDSHAKE_VERSION = 70002
 
@@ -23,8 +24,88 @@ class PeerController():
         super().__init__()
         self.peer = peer
         self.connection_manager = connection_manager
-        self.peer_manager = peer_manager
-        self.squeaks_access = squeaks_access
+
+        self.peer_message_handler = PeerMessageHandler(peer, connection_manager, peer_manager, squeaks_access)
+        self.peer_handshaker = PeerHandshaker(self.peer, peer_manager, connection_manager)
+        # peer_handshaker = PeerHandshaker(peer, self.connection_manager, self.peer_manager, self.squeaks_access)
+
+        self.message_handler_thread = threading.Thread(
+            target=self.peer_message_handler.start,
+        )
+        self.handshaker_thread = threading.Thread(
+            target=self.peer_handshaker.start,
+        )
+        # update_thread = threading.Thread(
+        #     target=peer_message_handler.peer_controller.update,
+        # )
+
+    def start(self):
+        logger.debug('Peer thread starting... {}'.format(self.peer))
+        try:
+            self.message_handler_thread.start()
+            logger.debug('Peer message handler thread started... {}'.format(self.peer))
+            self.handshaker_thread.start()
+            logger.debug('Peer handshaker thread started... {}'.format(self.peer))
+
+            # Wait for the listen thread to finish
+            self.message_handler_thread.join()
+            logger.debug('Peer message handler thread stopped... {}'.format(self.peer))
+
+            # Close and remove the peer before stopping.
+            self.peer.close()
+        finally:
+            self.connection_manager.remove_peer(self.peer)
+            logger.debug('Peer connection removed... {}'.format(self.peer))
+
+    def __enter__(self):
+        self.connection_manager.add_peer(self.peer)
+        logger.debug('Peer connection added... {}'.format(self.peer))
+        return self
+
+    def __exit__(self, *exc):
+        self.connection_manager.remove_peer(self.peer)
+        logger.debug('Peer connection removed... {}'.format(self.peer))
+
+# class PeerListener:
+#     """Handles receiving messages from a peer.
+#     """
+
+#     def __init__(self, peer_message_handler) -> None:
+#         super().__init__()
+#         self.peer_message_handler = peer_message_handler
+
+#     def listen_msgs(self):
+#         while True:
+#             try:
+#                 self.peer_message_handler.handle_msgs()
+#             except Exception as e:
+#                 logger.exception('Error in handle_msgs: {}'.format(e))
+#                 return
+
+
+class PeerHandshaker(PeerCommunicator):
+    """Handles receiving messages from a peer.
+    """
+
+    def __init__(self, peer, peer_manager, connection_manager):
+        super().__init__(peer, peer_manager)
+        self.connection_manager = connection_manager
+
+    def start(self):
+        # Start the handshake.
+        if self.peer.outgoing:
+            self.initiate_handshake()
+
+        # Wait for the handshake to complete.
+        handshake_result = self.peer._handshake_complete.wait(HANDSHAKE_TIMEOUT)
+        if self.peer.stopped.is_set():
+            return
+        if handshake_result:
+            logger.debug('Handshake success')
+            self.on_handshake_complete()
+        else:
+            logger.debug('Handshake failure')
+            self.peer.stop()
 
     def initiate_handshake(self):
         """Action to take upon completion of handshake with a peer."""
@@ -34,55 +115,7 @@ class PeerController():
         self.peer.send_msg(version)
 
     def on_handshake_complete(self):
-        """Action to take upon completion of handshake with a peer."""
-        logger.debug('Handshake complete with {}'.format(self.peer))
-        if self.connection_manager.add_peer(self.peer):
-            logger.debug('Peer connection added... {}'.format(self.peer))
-        else:
-            self.peer.close()
-
-    def initiate_ping(self):
-        """Send a ping message and expect a pong response."""
-        nonce = generate_nonce()
-        ping = msg_ping()
-        ping.nonce = nonce
-        self.peer.send_msg(ping)
-        self.peer.set_last_sent_ping(nonce)
-
-    def version_pkt(self):
-        msg = msg_version()
-        local_ip, local_port = self.peer_manager.ip, self.peer_manager.port
-        server_ip, server_port = self.peer.address
-        msg.nVersion = HANDSHAKE_VERSION
-        msg.addrTo.ip = server_ip
-        msg.addrTo.port = server_port
-        msg.addrFrom.ip = local_ip
-        msg.addrFrom.port = local_port
-        msg.nNonce = generate_nonce()
-        return msg
-
-    def update(self):
-        """Keep the peer connection updated."""
-        while True:
-            logger.info('Running update thread for peer {}'.format(self.peer))
-
-            if not self.connection_manager.has_connection(self.peer.address):
-                return
-
-            # Disconnect from peer if unhealthy
-            if self.peer.has_handshake_timeout():
-                logger.info('Closing peer because of handshake timeout {}'.format(self.peer))
-                self.peer.close()
-            if self.peer.has_inactive_timeout():
-                logger.info('Closing peer because of last message timeout {}'.format(self.peer))
-                self.peer.close()
-            if self.peer.has_ping_timeout():
-                logger.info('Closing peer because of ping timeout {}'.format(self.peer))
-                self.peer.close()
-
-            # Check if it's time to send a ping.
-            if self.peer.is_time_for_ping():
-                self.initiate_ping()
-
-            # Sleep
-            time.sleep(UPDATE_TIME_INTERVAL)
+        self.connection_manager.on_peers_changed()
+        # self.initiate_ping()
+        if self.peer.outgoing:
+            self.peer.send_msg(msg_getaddr())
