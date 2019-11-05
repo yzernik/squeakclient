@@ -56,7 +56,7 @@ class PeerManager(object):
     def handle_connection(self, peer):
         threading.Thread(
             target=self.peer_handler.start,
-            args=(peer,),
+            args=(peer, self.connection_manager,),
         ).start()
 
     def add_address(self, address):

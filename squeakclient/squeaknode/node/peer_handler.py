@@ -17,19 +17,17 @@ class PeerHandler():
     """Handles new peer connection.
     """
 
-    def __init__(self, connection_manager, peer_manager, squeaks_access) -> None:
+    def __init__(self, node):
         super().__init__()
-        self.connection_manager = connection_manager
-        self.peer_manager = peer_manager
-        self.squeaks_access = squeaks_access
+        self.node = node
 
-    def start(self, peer):
+    def start(self, peer, connection_manager):
         """Handles all sending and receiving of messages for the given peer.
 
         This method blocks until the peer connection has stopped.
         """
         logger.debug('Setting up controller for peer {} ...'.format(peer))
-        peer_controller = PeerController(peer, self.connection_manager, self.peer_manager, self.squeaks_access)
+        peer_controller = PeerController(peer, self.node, connection_manager)
         with peer_controller as pc:
             pc.start()
         logger.debug('Stopped controller for peer {}.'.format(peer))

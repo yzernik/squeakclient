@@ -13,6 +13,7 @@ from squeakclient.squeaknode.node.rpc_blockchain import RPCBlockchain
 from squeakclient.squeaknode.node.rpc_lightning_client import RPCLightningClient
 from squeakclient.squeaknode.node.stores.memory.storage import MemoryStorage
 from squeakclient.squeaknode.rpc.route_guide_server import RouteGuideServicer
+from squeakclient.squeaknode.node.peer_handler import PeerHandler
 
 
 def load_storage() -> Storage:
@@ -38,9 +39,10 @@ def load_lightning_client(rpc_host, rpc_port, network) -> LightningClient:
 
 def _start_node(storage, blockchain, lightning_client):
     node = ClientSqueakNode(storage, blockchain, lightning_client)
+    peer_handler = PeerHandler(node)
     thread = threading.Thread(
         target=node.start,
-        args=(),
+        args=(peer_handler,),
     )
     thread.daemon = True
     thread.start()
