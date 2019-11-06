@@ -6,15 +6,14 @@ from squeak.messages import msg_inv
 from squeak.messages import msg_notfound
 from squeak.messages import msg_pong
 from squeak.messages import msg_squeak
+from squeak.messages import msg_getaddr
+from squeak.messages import msg_version
 from squeak.messages import msg_verack
 from squeak.net import CInv
 
 from squeak.messages import msg_ping
 
 from squeakclient.squeaknode.util import generate_nonce
-
-from squeakclient.squeaknode.node.peer import Peer
-from squeakclient.squeaknode.node.peer_communicator import PeerCommunicator
 
 
 logger = logging.getLogger(__name__)
@@ -27,32 +26,40 @@ PING_INTERVAL = 60
 HANDSHAKE_VERSION = 70002
 
 
-class PeerMessageHandler(PeerCommunicator):
+class PeerMessageHandler:
     """Handles incoming messages from peers.
     """
 
-    def __init__(self, peer: Peer, connection_manager, peer_manager, squeaks_access):
-        super().__init__(peer, peer_manager)
-        self.connection_manager = connection_manager
-        self.peer_manager = peer_manager
-        self.squeaks_access = squeaks_access
+    def __init__(self, peer, node):
+        self.peer = peer
+        self.node = node
 
-    # def initiate_handshake(self):
-    #     """Action to take upon completion of handshake with a peer."""
-    #     logger.debug('Starting handshake with {}'.format(self.peer))
-    #     version = self.version_pkt()
-    #     self.peer.set_local_version(version)
-    #     self.peer.send_msg(version)
+    def version_pkt(self):
+        """Get the version message for this peer."""
+        msg = msg_version()
+        local_ip, local_port = self.node.address
+        server_ip, server_port = self.peer.address
+        msg.nVersion = HANDSHAKE_VERSION
+        msg.addrTo.ip = server_ip
+        msg.addrTo.port = server_port
+        msg.addrFrom.ip = local_ip
+        msg.addrFrom.port = local_port
+        msg.nNonce = generate_nonce()
+        return msg
 
-    # def on_handshake_complete(self):
-    #     """Action to take upon completion of handshake with a peer."""
-    #     logger.debug('Handshake complete with {}'.format(self.peer))
-    #     logger.debug('Setting handshake complete flag with peer {}'.format(self.peer))
-    #     self.peer._handshake_complete.set()
-    #     if self.connection_manager.add_peer(self.peer):
-    #         logger.debug('Peer connection added... {}'.format(self.peer))
-    #     else:
-    #         self.peer.close()
+    def initiate_handshake(self):
+        """Action to take upon completion of handshake with a peer."""
+        logger.debug('Starting handshake with {}'.format(self.peer))
+        version = self.version_pkt()
+        self.peer.set_local_version(version)
+        self.peer.send_msg(version)
+
+    def on_handshake_complete(self):
+        """Action to take upon completion of handshake with a peer."""
+        logger.debug('Handshake complete with {}'.format(self.peer))
+        # self.initiate_ping()
+        if self.peer.outgoing:
+            self.peer.send_msg(msg_getaddr())
 
     def start(self):
         while not self.peer.stopped.is_set():
@@ -112,7 +119,7 @@ class PeerMessageHandler(PeerCommunicator):
             self.handle_notfound(msg)
 
     def handle_version(self, msg):
-        if self.connection_manager.has_local_version_nonce(msg.nNonce):
+        if not self.node.is_valid_remote_nonce(msg.nNonce):
             logger.debug('Closing connection because of matching nonce with peer {}'.format(self.peer))
             self.peer.close()
             return
@@ -147,7 +154,7 @@ class PeerMessageHandler(PeerCommunicator):
             self.peer_manager.add_address((addr.ip, addr.port))
 
     def handle_getaddr(self, msg):
-        peers = self.connection_manager.peers
+        peers = self.node.get_peers()
         addresses = [peer.caddress for peer in peers
                      if peer.outgoing]
         addr_msg = msg_addr(addrs=addresses)

@@ -10,7 +10,6 @@ from squeakclient.squeaknode.node.access import SigningKeyAccess
 from squeakclient.squeaknode.node.access import SqueaksAccess
 from squeakclient.squeaknode.node.peer_manager import PeerManager
 from squeakclient.squeaknode.node.connection_manager import ConnectionManager
-from squeakclient.squeaknode.node.peer_handler import PeerHandler
 
 
 UPDATE_THREAD_SLEEP_TIME = 10
@@ -33,13 +32,17 @@ class ClientSqueakNode(object):
         self.signing_key_access = SigningKeyAccess(self.storage)
         self.follows_access = FollowsAccess(self.storage)
         self.squeaks_access = SqueaksAccess(self.storage)
-        self.peer_handler = PeerHandler(self.connection_manager, self.peer_manager, self.squeaks_access)
 
-    def start(self):
+    def start(self, peer_handler):
         # Start network node
-        self.peer_manager.start(
-            self.peer_handler,
-        )
+        self.peer_manager.start(peer_handler)
+
+    @property
+    def address(self):
+        return (self.peer_manager.ip, self.peer_manager.port)
+
+    def is_valid_remote_nonce(self, nonce):
+        return not self.connection_manager.has_local_version_nonce(nonce)
 
     def get_signing_key(self):
         return self.signing_key_access.get_signing_key()

@@ -1,11 +1,7 @@
 import threading
 import logging
 
-from squeakclient.squeaknode.node.peer import Peer
 from squeakclient.squeaknode.node.peer_message_handler import PeerMessageHandler
-
-from squeakclient.squeaknode.node.peer_communicator import PeerCommunicator
-from squeak.messages import msg_getaddr
 
 
 logger = logging.getLogger(__name__)
@@ -20,20 +16,21 @@ class PeerController():
     """Commands for interacting with remote peer.
     """
 
-    def __init__(self, peer: Peer, connection_manager, peer_manager, squeaks_access) -> None:
+    def __init__(self, peer, node, connection_manager):
         super().__init__()
         self.peer = peer
+        self.node = node
         self.connection_manager = connection_manager
 
-        self.peer_message_handler = PeerMessageHandler(peer, connection_manager, peer_manager, squeaks_access)
-        self.peer_handshaker = PeerHandshaker(self.peer, peer_manager, connection_manager)
-        # peer_handshaker = PeerHandshaker(peer, self.connection_manager, self.peer_manager, self.squeaks_access)
+        peer_message_handler = PeerMessageHandler(peer, node)
+        peer_listener = PeerListener(self.peer, peer_message_handler)
+        peer_handshaker = PeerHandshaker(self.peer, peer_message_handler, connection_manager)
 
-        self.message_handler_thread = threading.Thread(
-            target=self.peer_message_handler.start,
+        self.message_listener_thread = threading.Thread(
+            target=peer_listener.start,
         )
         self.handshaker_thread = threading.Thread(
-            target=self.peer_handshaker.start,
+            target=peer_handshaker.start,
         )
         # update_thread = threading.Thread(
         #     target=peer_message_handler.peer_controller.update,
@@ -42,20 +39,19 @@ class PeerController():
     def start(self):
         logger.debug('Peer thread starting... {}'.format(self.peer))
         try:
-            self.message_handler_thread.start()
+            self.message_listener_thread.start()
             logger.debug('Peer message handler thread started... {}'.format(self.peer))
             self.handshaker_thread.start()
             logger.debug('Peer handshaker thread started... {}'.format(self.peer))
 
             # Wait for the listen thread to finish
-            self.message_handler_thread.join()
+            self.message_listener_thread.join()
             logger.debug('Peer message handler thread stopped... {}'.format(self.peer))
 
             # Close and remove the peer before stopping.
             self.peer.close()
         finally:
-            self.connection_manager.remove_peer(self.peer)
-            logger.debug('Peer connection removed... {}'.format(self.peer))
+            logger.debug('Peer controller stopped... {}'.format(self.peer))
 
     def __enter__(self):
         self.connection_manager.add_peer(self.peer)
@@ -66,35 +62,37 @@ class PeerController():
         self.connection_manager.remove_peer(self.peer)
         logger.debug('Peer connection removed... {}'.format(self.peer))
 
-# class PeerListener:
-#     """Handles receiving messages from a peer.
-#     """
 
-#     def __init__(self, peer_message_handler) -> None:
-#         super().__init__()
-#         self.peer_message_handler = peer_message_handler
-
-#     def listen_msgs(self):
-#         while True:
-#             try:
-#                 self.peer_message_handler.handle_msgs()
-#             except Exception as e:
-#                 logger.exception('Error in handle_msgs: {}'.format(e))
-#                 return
-
-
-class PeerHandshaker(PeerCommunicator):
+class PeerListener:
     """Handles receiving messages from a peer.
     """
 
-    def __init__(self, peer, peer_manager, connection_manager):
-        super().__init__(peer, peer_manager)
+    def __init__(self, peer, peer_message_handler):
+        self.peer = peer
+        self.peer_message_handler = peer_message_handler
+
+    def start(self):
+        while True:
+            try:
+                self.peer_message_handler.handle_msgs()
+            except Exception as e:
+                logger.exception('Error in handle_msgs: {}'.format(e))
+                return
+
+
+class PeerHandshaker:
+    """Handles receiving messages from a peer.
+    """
+
+    def __init__(self, peer, peer_message_handler, connection_manager):
+        self.peer = peer
+        self.peer_message_handler = peer_message_handler
         self.connection_manager = connection_manager
 
     def start(self):
         # Start the handshake.
         if self.peer.outgoing:
-            self.initiate_handshake()
+            self.peer_message_handler.initiate_handshake()
 
         # Wait for the handshake to complete.
         handshake_result = self.peer._handshake_complete.wait(HANDSHAKE_TIMEOUT)
@@ -102,20 +100,8 @@ class PeerHandshaker(PeerCommunicator):
             return
         if handshake_result:
             logger.debug('Handshake success')
-            self.on_handshake_complete()
+            self.connection_manager.on_peers_changed()
+            self.peer_message_handler.on_handshake_complete()
         else:
             logger.debug('Handshake failure')
             self.peer.stop()
-
-    def initiate_handshake(self):
-        """Action to take upon completion of handshake with a peer."""
-        logger.debug('Starting handshake with {}'.format(self.peer))
-        version = self.version_pkt()
-        self.peer.set_local_version(version)
-        self.peer.send_msg(version)
-
-    def on_handshake_complete(self):
-        self.connection_manager.on_peers_changed()
-        # self.initiate_ping()
-        if self.peer.outgoing:
-            self.peer.send_msg(msg_getaddr())
