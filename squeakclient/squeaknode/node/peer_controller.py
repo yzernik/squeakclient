@@ -24,7 +24,7 @@ class PeerController():
 
         peer_message_handler = PeerMessageHandler(peer, node)
         peer_listener = PeerListener(self.peer, peer_message_handler)
-        peer_handshaker = PeerHandshaker(self.peer, peer_message_handler)
+        peer_handshaker = PeerHandshaker(self.peer, peer_message_handler, connection_manager)
 
         self.message_listener_thread = threading.Thread(
             target=peer_listener.start,
@@ -51,8 +51,7 @@ class PeerController():
             # Close and remove the peer before stopping.
             self.peer.close()
         finally:
-            self.connection_manager.remove_peer(self.peer)
-            logger.debug('Peer connection removed... {}'.format(self.peer))
+            logger.debug('Peer controller stopped... {}'.format(self.peer))
 
     def __enter__(self):
         self.connection_manager.add_peer(self.peer)
@@ -85,9 +84,10 @@ class PeerHandshaker:
     """Handles receiving messages from a peer.
     """
 
-    def __init__(self, peer, peer_message_handler):
+    def __init__(self, peer, peer_message_handler, connection_manager):
         self.peer = peer
         self.peer_message_handler = peer_message_handler
+        self.connection_manager = connection_manager
 
     def start(self):
         # Start the handshake.
@@ -100,6 +100,7 @@ class PeerHandshaker:
             return
         if handshake_result:
             logger.debug('Handshake success')
+            self.connection_manager.on_peers_changed()
             self.peer_message_handler.on_handshake_complete()
         else:
             logger.debug('Handshake failure')

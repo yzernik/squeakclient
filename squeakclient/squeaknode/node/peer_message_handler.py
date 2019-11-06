@@ -57,7 +57,6 @@ class PeerMessageHandler:
     def on_handshake_complete(self):
         """Action to take upon completion of handshake with a peer."""
         logger.debug('Handshake complete with {}'.format(self.peer))
-        self.connection_manager.on_peers_changed()
         # self.initiate_ping()
         if self.peer.outgoing:
             self.peer.send_msg(msg_getaddr())
@@ -155,7 +154,7 @@ class PeerMessageHandler:
             self.peer_manager.add_address((addr.ip, addr.port))
 
     def handle_getaddr(self, msg):
-        peers = self.connection_manager.peers
+        peers = self.node.get_peers()
         addresses = [peer.caddress for peer in peers
                      if peer.outgoing]
         addr_msg = msg_addr(addrs=addresses)
