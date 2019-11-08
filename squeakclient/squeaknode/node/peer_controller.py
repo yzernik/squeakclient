@@ -88,12 +88,12 @@ class PeerHandshaker:
         self.peer = peer
         self.node = node
         self.connection_manager = connection_manager
-        self.peer_message_handler = PeerMessageHandler(peer, node)
 
     def start(self):
         # Start the handshake.
+        logger.debug('Starting handshake with {}'.format(self.peer))
         if self.peer.outgoing:
-            self.peer_message_handler.initiate_handshake()
+            self.peer.send_version(self.node)
 
         # Wait for the handshake to complete.
         handshake_result = self.peer.handshake_complete.wait(HANDSHAKE_TIMEOUT)
@@ -102,7 +102,6 @@ class PeerHandshaker:
         if handshake_result:
             logger.debug('Handshake success')
             self.connection_manager.on_peers_changed()
-            self.peer_message_handler.on_handshake_complete()
         else:
             logger.debug('Handshake failure')
             self.peer.stop()

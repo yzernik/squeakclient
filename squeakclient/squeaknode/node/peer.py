@@ -6,6 +6,9 @@ from io import BytesIO
 from bitcoin.core.serialize import SerializationTruncationError
 from bitcoin.net import CAddress
 from squeak.messages import MsgSerializable
+from squeak.messages import msg_version
+
+from squeakclient.squeaknode.util import generate_nonce
 
 
 MAX_MESSAGE_LEN = 1048576
@@ -14,6 +17,7 @@ HANDSHAKE_TIMEOUT = 30
 LAST_MESSAGE_TIMEOUT = 600
 PING_TIMEOUT = 10
 PING_INTERVAL = 60
+HANDSHAKE_VERSION = 70002
 
 
 logger = logging.getLogger(__name__)
@@ -154,6 +158,24 @@ class Peer(object):
            self.local_version is not None:
             logger.debug('Handshake complete with {}'.format(self))
             self.handshake_complete.set()
+
+    def version_pkt(self, node):
+        """Get the version message for this peer."""
+        msg = msg_version()
+        local_ip, local_port = node.address
+        server_ip, server_port = self.address
+        msg.nVersion = HANDSHAKE_VERSION
+        msg.addrTo.ip = server_ip
+        msg.addrTo.port = server_port
+        msg.addrFrom.ip = local_ip
+        msg.addrFrom.port = local_port
+        msg.nNonce = generate_nonce()
+        return msg
+
+    def send_version(self, node):
+        version = self.version_pkt(node)
+        self.record_sent_version_msg(version)
+        self.send_msg(version)
 
     def __repr__(self):
         return "Peer(%s)" % (self.address_string)
