@@ -51,7 +51,7 @@ class PeerMessageHandler:
         """Action to take upon completion of handshake with a peer."""
         logger.debug('Starting handshake with {}'.format(self.peer))
         version = self.version_pkt()
-        self.peer.set_local_version(version)
+        self.peer.record_sent_version_msg(version)
         self.peer.send_msg(version)
 
     def on_handshake_complete(self):
@@ -89,7 +89,7 @@ class PeerMessageHandler:
         """Handle messages from a peer with completed handshake."""
 
         # Only allow version and verack messages before handshake is complete.
-        if not self.peer.handshake_complete and msg.command not in [
+        if not self.peer.is_handshake_complete and msg.command not in [
                 b'version',
                 b'verack',
         ]:
@@ -124,20 +124,19 @@ class PeerMessageHandler:
             self.peer.close()
             return
 
-        self.peer.set_remote_version(msg)
+        self.peer.record_recv_version_msg(msg)
         if self.peer.local_version is None:
             version = self.version_pkt()
-            self.peer.set_local_version(version)
+            self.peer.record_sent_version_msg(version)
             self.peer.send_msg(version)
         self.peer.send_msg(msg_verack())
 
     def handle_verack(self, msg):
-        if self.peer.remote_version is not None and self.peer.local_version is not None:
-
+        if self.peer.remote_version is not None and \
+           self.peer.local_version is not None:
             logger.debug('Handshake complete with {}'.format(self.peer))
             logger.debug('Setting handshake complete flag with peer {}'.format(self.peer))
             self.peer.set_handshake_complete()
-            # self.peer._handshake_complete.set()
 
     def handle_ping(self, msg):
         nonce = msg.nonce

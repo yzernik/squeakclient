@@ -24,7 +24,7 @@ class ConnectionManager(object):
         return [
             peer
             for peer in list(self._peers.values())
-            if peer.handshake_complete
+            if peer.is_handshake_complete
         ]
 
     def has_connection(self, address):

@@ -96,7 +96,7 @@ class PeerHandshaker:
             self.peer_message_handler.initiate_handshake()
 
         # Wait for the handshake to complete.
-        handshake_result = self.peer._handshake_complete.wait(HANDSHAKE_TIMEOUT)
+        handshake_result = self.peer.handshake_complete.wait(HANDSHAKE_TIMEOUT)
         if self.peer.stopped.is_set():
             return
         if handshake_result:
