@@ -18,13 +18,6 @@ from squeakclient.squeaknode.util import generate_nonce
 logger = logging.getLogger(__name__)
 
 
-HANDSHAKE_TIMEOUT = 30
-LAST_MESSAGE_TIMEOUT = 600
-PING_TIMEOUT = 10
-PING_INTERVAL = 60
-HANDSHAKE_VERSION = 70002
-
-
 class PeerMessageHandler:
     """Handles incoming messages from peers.
     """
