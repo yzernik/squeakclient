@@ -33,7 +33,7 @@ class Peer(object):
         self._local_version = None
         self._remote_version = None
         self._message_decoder = MessageDecoder()
-        self._last_msg_revc_time = time_now
+        self._last_msg_revc_time = None
         self._last_sent_ping_nonce = None
         self._last_sent_ping_time = None
         self._last_recv_ping_time = None
@@ -86,9 +86,6 @@ class Peer(object):
     @property
     def is_handshake_complete(self):
         return self.handshake_complete.is_set()
-
-    def set_handshake_complete(self):
-        self.handshake_complete.set()
 
     @property
     def last_msg_revc_time(self):
@@ -151,6 +148,12 @@ class Peer(object):
         if self._remote_version is not None:
             raise Exception('Remote version is already set.')
         self._remote_version = version_msg
+
+    def record_recv_verack_msg(self, verack_msg):
+        if self.remote_version is not None and \
+           self.local_version is not None:
+            logger.debug('Handshake complete with {}'.format(self))
+            self.handshake_complete.set()
 
     def __repr__(self):
         return "Peer(%s)" % (self.address_string)

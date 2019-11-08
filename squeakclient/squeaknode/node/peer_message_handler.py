@@ -61,14 +61,6 @@ class PeerMessageHandler:
         if self.peer.outgoing:
             self.peer.send_msg(msg_getaddr())
 
-    def start(self):
-        while not self.peer.stopped.is_set():
-            try:
-                self.handle_msgs()
-            except Exception as e:
-                logger.exception('Error in handle_msgs: {}'.format(e))
-                return
-
     def initiate_ping(self):
         """Send a ping message and expect a pong response."""
         nonce = generate_nonce()
@@ -132,11 +124,7 @@ class PeerMessageHandler:
         self.peer.send_msg(msg_verack())
 
     def handle_verack(self, msg):
-        if self.peer.remote_version is not None and \
-           self.peer.local_version is not None:
-            logger.debug('Handshake complete with {}'.format(self.peer))
-            logger.debug('Setting handshake complete flag with peer {}'.format(self.peer))
-            self.peer.set_handshake_complete()
+        self.peer.record_recv_verack_msg(msg)
 
     def handle_ping(self, msg):
         nonce = msg.nonce
