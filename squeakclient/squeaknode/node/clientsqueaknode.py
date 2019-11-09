@@ -44,6 +44,9 @@ class ClientSqueakNode(object):
     def is_valid_remote_nonce(self, nonce):
         return not self.connection_manager.has_local_version_nonce(nonce)
 
+    def update_peers(self):
+        self.connection_manager.on_peers_changed()
+
     def get_signing_key(self):
         return self.signing_key_access.get_signing_key()
 

@@ -151,7 +151,7 @@ def run():
         carol_address = carol_stub.GenerateSigningKey(request).address
         print("Generated signing key for Alice with address: %s" % alice_address)
         print("Generated signing key for Bob with address: %s" % bob_address)
-        print("Generated signing key for Alice with address: %s" % carol_address)
+        print("Generated signing key for Carol with address: %s" % carol_address)
 
         print("-------------- MakeSqueak --------------")
         content = 'hello world!'

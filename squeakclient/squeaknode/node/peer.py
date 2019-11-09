@@ -6,6 +6,9 @@ from io import BytesIO
 from bitcoin.core.serialize import SerializationTruncationError
 from bitcoin.net import CAddress
 from squeak.messages import MsgSerializable
+from squeak.messages import msg_version
+
+from squeakclient.squeaknode.util import generate_nonce
 
 
 MAX_MESSAGE_LEN = 1048576
@@ -14,6 +17,7 @@ HANDSHAKE_TIMEOUT = 30
 LAST_MESSAGE_TIMEOUT = 600
 PING_TIMEOUT = 10
 PING_INTERVAL = 60
+HANDSHAKE_VERSION = 70002
 
 
 logger = logging.getLogger(__name__)
@@ -33,12 +37,12 @@ class Peer(object):
         self._local_version = None
         self._remote_version = None
         self._message_decoder = MessageDecoder()
-        self._last_msg_revc_time = time_now
+        self._last_msg_revc_time = None
         self._last_sent_ping_nonce = None
         self._last_sent_ping_time = None
         self._last_recv_ping_time = None
 
-        self._handshake_complete = threading.Event()
+        self.handshake_complete = threading.Event()
         self.ping_started = threading.Event()
         self.ping_complete = threading.Event()
         self.stopped = threading.Event()
@@ -79,22 +83,13 @@ class Peer(object):
     def local_version(self):
         return self._local_version
 
-    def set_local_version(self, version):
-        self._local_version = version
-
     @property
     def remote_version(self):
         return self._remote_version
 
-    def set_remote_version(self, version):
-        self._remote_version = version
-
     @property
-    def handshake_complete(self):
-        return self._handshake_complete.is_set()
-
-    def set_handshake_complete(self):
-        self._handshake_complete.set()
+    def is_handshake_complete(self):
+        return self.handshake_complete.is_set()
 
     @property
     def last_msg_revc_time(self):
@@ -146,39 +141,41 @@ class Peer(object):
         with self._peer_socket_lock:
             self._peer_socket.send(data)
 
-    # def has_inactive_timeout(self):
-    #     """Return True if the last message received time has timed out."""
-    #     if not self._handshake_complete:
-    #         return False
-    #     if self._last_msg_revc_time is None:
-    #         return False
-    #     return time.time() - self._last_msg_revc_time > LAST_MESSAGE_TIMEOUT
+    def record_sent_version_msg(self, version_msg):
+        # Set the local version.
+        if self._local_version is not None:
+            raise Exception('Local version is already set.')
+        self._local_version = version_msg
 
-    # def has_ping_timeout(self):
-    #     """Return True if the ping has timed out."""
-    #     if not self._handshake_complete:
-    #         return False
-    #     last_sent_ping_nonce = self._last_sent_ping_nonce
-    #     last_sent_ping_time = self._last_sent_ping_time
-    #     if last_sent_ping_nonce is None:
-    #         return False
-    #     if last_sent_ping_time is None:
-    #         return False
-    #     return time.time() - last_sent_ping_time > PING_TIMEOUT
+    def record_recv_version_msg(self, version_msg):
+        # Set the remote version
+        if self._remote_version is not None:
+            raise Exception('Remote version is already set.')
+        self._remote_version = version_msg
 
-    # def is_time_for_ping(self):
-    #     """Return True if a ping message needs to be sent."""
-    #     if not self._handshake_complete:
-    #         return False
-    #     last_sent_ping_time = self._last_sent_ping_time
-    #     if last_sent_ping_time is None:
-    #         return True
-    #     return time.time() - last_sent_ping_time > PING_INTERVAL
+    def record_recv_verack_msg(self, verack_msg):
+        if self.remote_version is not None and \
+           self.local_version is not None:
+            logger.debug('Handshake complete with {}'.format(self))
+            self.handshake_complete.set()
 
-    # def set_pong_response(self, nonce):
-    #     """Update the status of the peer with the nonce from a pong message."""
-    #     if nonce == self._last_sent_ping_nonce:
-    #         self._last_sent_ping_nonce = None
+    def version_pkt(self, node):
+        """Get the version message for this peer."""
+        msg = msg_version()
+        local_ip, local_port = node.address
+        server_ip, server_port = self.address
+        msg.nVersion = HANDSHAKE_VERSION
+        msg.addrTo.ip = server_ip
+        msg.addrTo.port = server_port
+        msg.addrFrom.ip = local_ip
+        msg.addrFrom.port = local_port
+        msg.nNonce = generate_nonce()
+        return msg
+
+    def send_version(self, node):
+        version = self.version_pkt(node)
+        self.record_sent_version_msg(version)
+        self.send_msg(version)
 
     def __repr__(self):
         return "Peer(%s)" % (self.address_string)

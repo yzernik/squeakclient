@@ -7,7 +7,6 @@ from squeak.messages import msg_notfound
 from squeak.messages import msg_pong
 from squeak.messages import msg_squeak
 from squeak.messages import msg_getaddr
-from squeak.messages import msg_version
 from squeak.messages import msg_verack
 from squeak.net import CInv
 
@@ -19,13 +18,6 @@ from squeakclient.squeaknode.util import generate_nonce
 logger = logging.getLogger(__name__)
 
 
-HANDSHAKE_TIMEOUT = 30
-LAST_MESSAGE_TIMEOUT = 600
-PING_TIMEOUT = 10
-PING_INTERVAL = 60
-HANDSHAKE_VERSION = 70002
-
-
 class PeerMessageHandler:
     """Handles incoming messages from peers.
     """
@@ -33,41 +25,6 @@ class PeerMessageHandler:
     def __init__(self, peer, node):
         self.peer = peer
         self.node = node
-
-    def version_pkt(self):
-        """Get the version message for this peer."""
-        msg = msg_version()
-        local_ip, local_port = self.node.address
-        server_ip, server_port = self.peer.address
-        msg.nVersion = HANDSHAKE_VERSION
-        msg.addrTo.ip = server_ip
-        msg.addrTo.port = server_port
-        msg.addrFrom.ip = local_ip
-        msg.addrFrom.port = local_port
-        msg.nNonce = generate_nonce()
-        return msg
-
-    def initiate_handshake(self):
-        """Action to take upon completion of handshake with a peer."""
-        logger.debug('Starting handshake with {}'.format(self.peer))
-        version = self.version_pkt()
-        self.peer.set_local_version(version)
-        self.peer.send_msg(version)
-
-    def on_handshake_complete(self):
-        """Action to take upon completion of handshake with a peer."""
-        logger.debug('Handshake complete with {}'.format(self.peer))
-        # self.initiate_ping()
-        if self.peer.outgoing:
-            self.peer.send_msg(msg_getaddr())
-
-    def start(self):
-        while not self.peer.stopped.is_set():
-            try:
-                self.handle_msgs()
-            except Exception as e:
-                logger.exception('Error in handle_msgs: {}'.format(e))
-                return
 
     def initiate_ping(self):
         """Send a ping message and expect a pong response."""
@@ -89,7 +46,7 @@ class PeerMessageHandler:
         """Handle messages from a peer with completed handshake."""
 
         # Only allow version and verack messages before handshake is complete.
-        if not self.peer.handshake_complete and msg.command not in [
+        if not self.peer.is_handshake_complete and msg.command not in [
                 b'version',
                 b'verack',
         ]:
@@ -124,20 +81,18 @@ class PeerMessageHandler:
             self.peer.close()
             return
 
-        self.peer.set_remote_version(msg)
+        self.peer.record_recv_version_msg(msg)
         if self.peer.local_version is None:
-            version = self.version_pkt()
-            self.peer.set_local_version(version)
-            self.peer.send_msg(version)
+            self.peer.send_version(self.node)
         self.peer.send_msg(msg_verack())
 
     def handle_verack(self, msg):
-        if self.peer.remote_version is not None and self.peer.local_version is not None:
-
-            logger.debug('Handshake complete with {}'.format(self.peer))
-            logger.debug('Setting handshake complete flag with peer {}'.format(self.peer))
-            self.peer.set_handshake_complete()
-            # self.peer._handshake_complete.set()
+        self.peer.record_recv_verack_msg(msg)
+        if self.peer.is_handshake_complete:
+            self.node.update_peers()
+            # self.initiate_ping()
+            if self.peer.outgoing:
+                self.peer.send_msg(msg_getaddr())
 
     def handle_ping(self, msg):
         nonce = msg.nonce
