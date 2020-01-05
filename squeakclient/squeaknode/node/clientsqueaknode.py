@@ -5,10 +5,9 @@ from squeakclient.squeaknode.core.lightning_client import LightningClient
 from squeakclient.squeaknode.core.squeak_maker import SqueakMaker
 from squeakclient.squeaknode.core.stores.storage import Storage
 from squeakclient.squeaknode.node.access import FollowsAccess
-from squeakclient.squeaknode.node.access import PeersAccess
 from squeakclient.squeaknode.node.access import SigningKeyAccess
 from squeakclient.squeaknode.node.access import SqueaksAccess
-from squeakclient.squeaknode.node.peer_manager import PeerManager
+from squeakclient.squeaknode.node.peer_server import PeerServer
 from squeakclient.squeaknode.node.connection_manager import ConnectionManager
 
 
@@ -27,25 +26,21 @@ class ClientSqueakNode(object):
         self.blockchain = blockchain
         self.lightning_client = lightning_client
         self.connection_manager = ConnectionManager()
-        self.peer_manager = PeerManager(self.connection_manager)
-        self.peers_access = PeersAccess(self.peer_manager)
+        self.peer_server = PeerServer(self.connection_manager)
         self.signing_key_access = SigningKeyAccess(self.storage)
         self.follows_access = FollowsAccess(self.storage)
         self.squeaks_access = SqueaksAccess(self.storage)
 
     def start(self, peer_handler):
         # Start network node
-        self.peer_manager.start(peer_handler)
+        self.peer_server.start(peer_handler)
 
     @property
     def address(self):
-        return (self.peer_manager.ip, self.peer_manager.port)
+        return (self.peer_server.ip, self.peer_server.port)
 
     def is_valid_remote_nonce(self, nonce):
-        return not self.connection_manager.has_local_version_nonce(nonce)
-
-    def update_peers(self):
-        self.connection_manager.on_peers_changed()
+        return nonce not in self.peer_server.get_peer_nonces()
 
     def get_signing_key(self):
         return self.signing_key_access.get_signing_key()
@@ -90,13 +85,13 @@ class ClientSqueakNode(object):
         self.follows_access.get_follows()
 
     def connect_host(self, host):
-        self.peers_access.connect_host(host)
+        self.peer_server.connect_host(host)
 
     def get_peers(self):
-        return self.peers_access.get_connected_peers()
+        return self.peer_server.get_connected_peers()
 
     def listen_peers_changed(self, callback):
-        self.peers_access.listen_peers_changed(callback)
+        self.peer_server.listen_peers_changed(callback)
 
     def get_wallet_balance(self):
         return self.lightning_client.get_wallet_balance()

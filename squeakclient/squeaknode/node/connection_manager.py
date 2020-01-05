@@ -21,23 +21,11 @@ class ConnectionManager(object):
 
     @property
     def peers(self):
-        return [
-            peer
-            for peer in list(self._peers.values())
-            if peer.is_handshake_complete
-        ]
+        return list(self._peers.values())
 
     def has_connection(self, address):
         """Return True if the address is already connected."""
         return address in self._peers
-
-    def has_local_version_nonce(self, nonce):
-        """Return True if the nonce is one of the local version nonces."""
-        for peer in self.peers:
-            if peer.local_version:
-                if nonce == peer.local_version.nNonce:
-                    return True
-        return False
 
     def on_peers_changed(self):
         logger.info('Current number of peers {}'.format(len(self.peers)))
@@ -70,10 +58,6 @@ class ConnectionManager(object):
                 del self._peers[peer.address]
                 logger.debug('Removed peer {}'.format(peer))
                 self.on_peers_changed()
-
-    def need_more_peers(self):
-        """Return True if more peers are needed."""
-        return len(self.peers) < self.max_peers
 
 
 class DuplicatePeerError(Exception):

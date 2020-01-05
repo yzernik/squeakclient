@@ -15,7 +15,7 @@ UPDATE_THREAD_SLEEP_TIME = 10
 logger = logging.getLogger(__name__)
 
 
-class PeerManager(object):
+class PeerServer(object):
     """Maintains connections to other peers in the network.
     """
 
@@ -61,8 +61,7 @@ class PeerManager(object):
 
     def add_address(self, address):
         """Add a new address."""
-        if self.connection_manager.need_more_peers():
-            self.connect_address(address)
+        self.connect_address(address)
 
     def connect_address(self, address):
         """Connect to new address."""
@@ -88,7 +87,18 @@ class PeerManager(object):
             self.add_address(seed_peer)
 
     def get_connected_peers(self):
-        return self.connection_manager.peers
+        return [
+            peer
+            for peer in list(self.connection_manager.peers)
+            if peer.is_handshake_complete
+        ]
+
+    def get_peer_nonces(self):
+        return [
+            peer.local_version.nNonce
+            for peer in self.connection_manager.peers
+            if peer.local_version
+        ]
 
 
 def resolve_hostname(hostname):

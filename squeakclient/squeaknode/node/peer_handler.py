@@ -53,8 +53,8 @@ class PeerHandler():
 #     """Handles the peer handshake.
 #     """
 
-#     def __init__(self, peer, connection_manager, peer_manager, squeaks_access) -> None:
-#         super().__init__(peer, connection_manager, peer_manager, squeaks_access)
+#     def __init__(self, peer, connection_manager, peer_server, squeaks_access) -> None:
+#         super().__init__(peer, connection_manager, peer_server, squeaks_access)
 
 #     def hanshake(self):
 #         # Initiate handshake with the peer if the connection is outgoing.

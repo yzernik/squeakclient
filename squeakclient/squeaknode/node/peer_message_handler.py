@@ -89,7 +89,6 @@ class PeerMessageHandler:
     def handle_verack(self, msg):
         self.peer.record_recv_verack_msg(msg)
         if self.peer.is_handshake_complete:
-            self.node.update_peers()
             # self.initiate_ping()
             if self.peer.outgoing:
                 self.peer.send_msg(msg_getaddr())
@@ -106,7 +105,7 @@ class PeerMessageHandler:
 
     def handle_addr(self, msg):
         for addr in msg.addrs:
-            self.peer_manager.add_address((addr.ip, addr.port))
+            self.peer_server.add_address((addr.ip, addr.port))
 
     def handle_getaddr(self, msg):
         peers = self.node.get_peers()

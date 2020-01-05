@@ -7,7 +7,6 @@ from squeak.net import CInterested
 from squeak.net import CSqueakLocator
 
 from squeakclient.squeaknode.core.stores.storage import Storage
-from squeakclient.squeaknode.node.peer_manager import PeerManager
 
 
 logger = logging.getLogger(__name__)
@@ -113,24 +112,3 @@ class SqueaksAccess(object):
 
     def get_squeak_hashes(self):
         return self.storage.get_squeak_store().get_hashes()
-
-
-class PeersAccess(object):
-
-    def __init__(self, peer_manager: PeerManager) -> None:
-        self.peer_manager = peer_manager
-
-    def connect_host(self, host):
-        self.peer_manager.connect_host(host)
-
-    def add_address(self, address):
-        self.peer_manager.add_address(address)
-
-    def get_connected_peers(self):
-        return self.peer_manager.get_connected_peers()
-
-    def listen_peers_changed(self, callback):
-        self.peer_manager.listen_peers_changed(callback)
-
-    # def get_local_ip_port(self):
-    #     return self.peer_manager.ip, self.peer_manager.port
