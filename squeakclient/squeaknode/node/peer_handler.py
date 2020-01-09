@@ -1,16 +1,9 @@
 import logging
 
-from squeakclient.squeaknode.node.peer_controller import PeerController
+from squeakclient.squeaknode.node.connection import Connection
 
 
 logger = logging.getLogger(__name__)
-
-
-HANDSHAKE_TIMEOUT = 30
-LAST_MESSAGE_TIMEOUT = 600
-PING_TIMEOUT = 10
-PING_INTERVAL = 60
-HANDSHAKE_VERSION = 70002
 
 
 class PeerHandler():
@@ -27,7 +20,7 @@ class PeerHandler():
         This method blocks until the peer connection has stopped.
         """
         logger.debug('Setting up controller for peer {} ...'.format(peer))
-        peer_controller = PeerController(peer, self.node, connection_manager)
+        peer_controller = Connection(peer, self.node, connection_manager)
         with peer_controller as pc:
             pc.start()
         logger.debug('Stopped controller for peer {}.'.format(peer))
@@ -49,7 +42,7 @@ class PeerHandler():
 #                 return
 
 
-# class PeerHandshaker(PeerController):
+# class PeerHandshaker(Connection):
 #     """Handles the peer handshake.
 #     """
 

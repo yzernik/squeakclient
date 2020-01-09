@@ -6,8 +6,6 @@ from squeak.messages import msg_inv
 from squeak.messages import msg_notfound
 from squeak.messages import msg_pong
 from squeak.messages import msg_squeak
-from squeak.messages import msg_getaddr
-from squeak.messages import msg_verack
 from squeak.net import CInv
 
 from squeak.messages import msg_ping
@@ -39,7 +37,8 @@ class PeerMessageHandler:
 
         This method blocks when the peer has not sent any messages.
         """
-        for msg in self.peer.handle_recv_data():
+        while True:
+            msg = self.peer.recv_msg()
             self.handle_peer_message(msg)
 
     def handle_peer_message(self, msg):
@@ -74,24 +73,6 @@ class PeerMessageHandler:
             self.handle_getdata(msg)
         if msg.command == b'notfound':
             self.handle_notfound(msg)
-
-    def handle_version(self, msg):
-        if not self.node.is_valid_remote_nonce(msg.nNonce):
-            logger.debug('Closing connection because of matching nonce with peer {}'.format(self.peer))
-            self.peer.close()
-            return
-
-        self.peer.record_recv_version_msg(msg)
-        if self.peer.local_version is None:
-            self.peer.send_version(self.node)
-        self.peer.send_msg(msg_verack())
-
-    def handle_verack(self, msg):
-        self.peer.record_recv_verack_msg(msg)
-        if self.peer.is_handshake_complete:
-            # self.initiate_ping()
-            if self.peer.outgoing:
-                self.peer.send_msg(msg_getaddr())
 
     def handle_ping(self, msg):
         nonce = msg.nonce

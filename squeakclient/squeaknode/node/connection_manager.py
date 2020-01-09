@@ -30,7 +30,7 @@ class ConnectionManager(object):
     def on_peers_changed(self):
         logger.info('Current number of peers {}'.format(len(self.peers)))
         if self.peers_changed_callback:
-            peers = self.get_connected_peers()
+            peers = self.get_peers()
             self.peers_changed_callback(peers)
 
     def listen_peers_changed(self, callback):

@@ -86,19 +86,8 @@ class PeerServer(object):
         for seed_peer in get_seed_peer_addresses():
             self.add_address(seed_peer)
 
-    def get_connected_peers(self):
-        return [
-            peer
-            for peer in list(self.connection_manager.peers)
-            if peer.is_handshake_complete
-        ]
-
-    def get_peer_nonces(self):
-        return [
-            peer.local_version.nNonce
-            for peer in self.connection_manager.peers
-            if peer.local_version
-        ]
+    def get_peers(self):
+        return list(self.connection_manager.peers)
 
 
 def resolve_hostname(hostname):

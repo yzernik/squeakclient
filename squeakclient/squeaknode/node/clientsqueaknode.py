@@ -39,9 +39,6 @@ class ClientSqueakNode(object):
     def address(self):
         return (self.peer_server.ip, self.peer_server.port)
 
-    def is_valid_remote_nonce(self, nonce):
-        return nonce not in self.peer_server.get_peer_nonces()
-
     def get_signing_key(self):
         return self.signing_key_access.get_signing_key()
 
@@ -88,7 +85,7 @@ class ClientSqueakNode(object):
         self.peer_server.connect_host(host)
 
     def get_peers(self):
-        return self.peer_server.get_connected_peers()
+        return self.peer_server.get_peers()
 
     def listen_peers_changed(self, callback):
         self.peer_server.listen_peers_changed(callback)

@@ -2,7 +2,10 @@ import threading
 import logging
 
 from squeakclient.squeaknode.node.peer_message_handler import PeerMessageHandler
+from squeakclient.squeaknode.util import generate_nonce
 
+from squeak.messages import msg_version
+from squeak.messages import msg_verack
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +15,7 @@ UPDATE_TIME_INTERVAL = 10
 HANDSHAKE_VERSION = 70002
 
 
-class PeerController():
+class Connection():
     """Commands for interacting with remote peer.
     """
 
@@ -23,13 +26,9 @@ class PeerController():
         self.connection_manager = connection_manager
 
         peer_listener = PeerListener(self.peer, self.node)
-        peer_handshaker = PeerHandshaker(self.peer, self.node)
 
         self.message_listener_thread = threading.Thread(
             target=peer_listener.start,
-        )
-        self.handshaker_thread = threading.Thread(
-            target=peer_handshaker.start,
         )
         # update_thread = threading.Thread(
         #     target=peer_message_handler.peer_controller.update,
@@ -40,8 +39,6 @@ class PeerController():
         try:
             self.message_listener_thread.start()
             logger.debug('Peer message handler thread started... {}'.format(self.peer))
-            self.handshaker_thread.start()
-            logger.debug('Peer handshaker thread started... {}'.format(self.peer))
 
             # Wait for the listen thread to finish
             self.message_listener_thread.join()
@@ -52,14 +49,65 @@ class PeerController():
         finally:
             logger.debug('Peer controller stopped... {}'.format(self.peer))
 
+    def handshake(self):
+        if self.peer.outgoing:
+            local_version = self.version_pkt()
+            self.peer.local_version = local_version
+            self.peer.send_msg(local_version)
+            verack = self.peer.recv_msg()
+            if not isinstance(verack, msg_verack):
+                raise Exception('Wrong message type for verack response.')
+
+        remote_version = self.peer.recv_msg()
+        if not isinstance(remote_version, msg_version):
+            raise Exception('Wrong message type for version message.')
+        if self._is_duplicate_nonce(remote_version.nNonce):
+            raise Exception('Remote nonce is duplicate of local nonce.')
+        self.peer.remote_version = remote_version
+        verack = msg_verack()
+        self.peer.send_msg(verack)
+
+        if not self.peer.outgoing:
+            local_version = self.version_pkt()
+            self.peer.local_version = local_version
+            self.peer.send_msg(local_version)
+            verack = self.peer.recv_msg()
+            if not isinstance(verack, msg_verack):
+                raise Exception('Wrong message type for verack response.')
+
+        return
+
+    def version_pkt(self):
+        """Get the version message for this peer."""
+        msg = msg_version()
+        local_ip, local_port = self.node.address
+        server_ip, server_port = self.peer.address
+        msg.nVersion = HANDSHAKE_VERSION
+        msg.addrTo.ip = server_ip
+        msg.addrTo.port = server_port
+        msg.addrFrom.ip = local_ip
+        msg.addrFrom.port = local_port
+        msg.nNonce = generate_nonce()
+        return msg
+
     def __enter__(self):
         self.connection_manager.add_peer(self.peer)
+        # Do the handshake here using recv with timeouts.
+        self.handshake()
+        # TODO: Start the ping checker thread/timer.
         logger.debug('Peer connection added... {}'.format(self.peer))
         return self
 
     def __exit__(self, *exc):
         self.connection_manager.remove_peer(self.peer)
         logger.debug('Peer connection removed... {}'.format(self.peer))
+
+    def _is_duplicate_nonce(self, nonce):
+        for peer in self.connection_manager.peers:
+            if peer.local_version:
+                if nonce == peer.local_version.nNonce:
+                    return True
+        return False
 
 
 class PeerListener:
@@ -78,24 +126,3 @@ class PeerListener:
             except Exception as e:
                 logger.exception('Error in handle_msgs: {}'.format(e))
                 return
-
-
-class PeerHandshaker:
-    """Handles receiving messages from a peer.
-    """
-
-    def __init__(self, peer, node):
-        self.peer = peer
-        self.node = node
-
-    def start(self):
-        # Start the handshake.
-        logger.debug('Starting handshake with {}'.format(self.peer))
-        if self.peer.outgoing:
-            self.peer.send_version(self.node)
-
-        # Wait for the handshake to complete.
-        handshake_result = self.peer.handshake_complete.wait(HANDSHAKE_TIMEOUT)
-        if not handshake_result:
-            logger.debug('Handshake failure')
-            self.peer.stop()
