@@ -60,7 +60,11 @@ service RouteGuide {
 
   /** sqk: `addpeer`
   */
-  rpc AddPeer (AddPeerRequest) returns (AddPeerResponse) {}
+  rpc ConnectHost (ConnectHostRequest) returns (ConnectHostResponse) {}
+
+  /** sqk: `disconnectpeer`
+  */
+  rpc DisconnectPeer (DisconnectPeerRequest) returns (DisconnectPeerResponse) {}
 
   /** sqk: `listpeers`
   ListPeers returns a verbose listing of all currently active peers.
@@ -162,12 +166,19 @@ message WalletBalanceResponse {
 //     int64 unconfirmed_balance = 3 [json_name = "unconfirmed_balance"];
 // }
 
-message AddPeerRequest {
+message ConnectHostRequest {
     // The address of the peer to add.
+    string host = 1;
+}
+
+message ConnectHostResponse {
+}
+
+message DisconnectPeerRequest {
     Addr addr = 1;
 }
 
-message AddPeerResponse {
+message DisconnectPeerResponse {
 }
 
 message ListPeersRequest {
@@ -197,32 +208,31 @@ message GenerateSigningKeyResponse {
 
 message Addr {
   string host = 1;
+
+  uint64 port = 2;
 }
 
 message Peer {
-    /// Network host of the peer; eg `127.0.0.1`
-    string host = 1;
-
-    /// Network host of the peer; eg `10011`
-    uint64 port = 2;
+    /// Address
+    Addr addr = 1;
 
     /// Bytes of data transmitted to this peer
-    uint64 bytes_sent = 3;
+    uint64 bytes_sent = 2;
 
     /// Bytes of data transmitted from this peer
-    uint64 bytes_recv = 4;
+    uint64 bytes_recv = 3;
 
     /// Satoshis sent to this peer
-    int64 sat_sent = 5;
+    int64 sat_sent = 4;
 
     /// Satoshis received from this peer
-    int64 sat_recv = 6;
+    int64 sat_recv = 5;
 
     /// A channel is inbound if the counterparty initiated the connection
-    bool inbound = 7;
+    bool inbound = 6;
 
     /// Ping time to this peer
-    int64 ping_time = 8;
+    int64 ping_time = 7;
 }
 
 message Squeak {

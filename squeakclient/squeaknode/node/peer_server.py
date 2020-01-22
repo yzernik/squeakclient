@@ -4,8 +4,6 @@ import threading
 
 import squeak.params
 
-from squeakclient.squeaknode.node.peer import Peer
-
 
 MIN_PEERS = 5
 MAX_PEERS = 10
@@ -30,6 +28,11 @@ class PeerServer(object):
         # Start Listen thread
         threading.Thread(target=self.accept_connections).start()
 
+    def stop(self):
+        # TODO: stop accepting connections thread.
+        # TODO: stop every peer in connection manager.
+        pass
+
     def accept_connections(self):
         listen_socket = socket.socket()
         listen_socket.bind(('', self.port))
@@ -37,8 +40,7 @@ class PeerServer(object):
         while True:
             peer_socket, address = listen_socket.accept()
             peer_socket.setblocking(True)
-            peer = Peer(peer_socket, address)
-            self.handle_connection(peer)
+            self.handle_connection(peer_socket, address, outgoing=False)
 
     def make_connection(self, ip, port):
         address = (ip, port)
@@ -47,21 +49,15 @@ class PeerServer(object):
             peer_socket = socket.socket()
             peer_socket.connect(address)
             peer_socket.setblocking(True)
-            peer = Peer(peer_socket, address, outgoing=True)
-            self.handle_connection(peer)
-            # self.on_connect(peer)
+            self.handle_connection(peer_socket, address, outgoing=True)
         except Exception:
             pass
 
-    def handle_connection(self, peer):
+    def handle_connection(self, peer_socket, address, outgoing):
         threading.Thread(
             target=self.peer_handler.start,
-            args=(peer, self.connection_manager,),
+            args=(peer_socket, address, outgoing,),
         ).start()
-
-    def add_address(self, address):
-        """Add a new address."""
-        self.connect_address(address)
 
     def connect_address(self, address):
         """Connect to new address."""
@@ -73,36 +69,3 @@ class PeerServer(object):
             target=self.make_connection,
             args=(ip, port),
         ).start()
-
-    def connect_host(self, host):
-        """Connect to new host."""
-        ip = socket.gethostbyname(host)
-        address = (ip, squeak.params.params.DEFAULT_PORT)
-        self.connect_address(address)
-
-    def connect_seed_peers(self):
-        """Find more peers.
-        """
-        for seed_peer in get_seed_peer_addresses():
-            self.add_address(seed_peer)
-
-    def get_peers(self):
-        return list(self.connection_manager.peers)
-
-
-def resolve_hostname(hostname):
-    """Get the ip address from hostname."""
-    try:
-        ip = socket.gethostbyname(hostname)
-    except Exception:
-        return None
-    port = squeak.params.params.DEFAULT_PORT
-    return (ip, port)
-
-
-def get_seed_peer_addresses():
-    """Get addresses of seed peers"""
-    for _, seed_host in squeak.params.params.DNS_SEEDS:
-        address = resolve_hostname(seed_host)
-        if address:
-            yield address

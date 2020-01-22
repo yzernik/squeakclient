@@ -86,7 +86,7 @@ class PeerMessageHandler:
 
     def handle_addr(self, msg):
         for addr in msg.addrs:
-            self.peer_server.add_address((addr.ip, addr.port))
+            self.peer_server.connect_address((addr.ip, addr.port))
 
     def handle_getaddr(self, msg):
         peers = self.node.get_peers()

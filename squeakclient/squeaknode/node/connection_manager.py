@@ -59,6 +59,11 @@ class ConnectionManager(object):
                 logger.debug('Removed peer {}'.format(peer))
                 self.on_peers_changed()
 
+    def get_peer(self, address):
+        """Get a peer info by address.
+        """
+        return self._peers.get(address)
+
 
 class DuplicatePeerError(Exception):
     pass

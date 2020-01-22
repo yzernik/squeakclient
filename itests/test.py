@@ -113,21 +113,19 @@ def run():
         print("Balance confirmed %s %s" % (balance.total_balance, balance.total_balance))
         assert balance.total_balance == 1505000000000
 
-        print("-------------- AddPeer --------------")
+        print("-------------- ConnectHost --------------")
         # Connect alice to bob
-        addr = route_guide_pb2.Addr(host='sqk_bob')
-        request = route_guide_pb2.AddPeerRequest(
-            addr=addr,
+        request = route_guide_pb2.ConnectHostRequest(
+            host='sqk_bob',
         )
-        alice_stub.AddPeer(request)
+        alice_stub.ConnectHost(request)
         time.sleep(1)
 
         # Connect bob to carol
-        addr = route_guide_pb2.Addr(host='sqk_carol')
-        request = route_guide_pb2.AddPeerRequest(
-            addr=addr,
+        request = route_guide_pb2.ConnectHostRequest(
+            host='sqk_carol',
         )
-        bob_stub.AddPeer(request)
+        bob_stub.ConnectHost(request)
         time.sleep(1)
 
         # Check how many peers alice has.
@@ -163,6 +161,23 @@ def run():
         print("Made squeak: %s" % squeak)
         assert 'hello world!' == squeak.content
         assert 400 == squeak.block_height
+
+        print("-------------- DisconnectPeer --------------")
+        # Disconnect all peers from alice
+        print("Alice peers: %s" % alice_peers)
+        for peer in alice_peers:
+            address = peer.addr
+            request = route_guide_pb2.DisconnectPeerRequest(
+                addr=address,
+            )
+            alice_stub.DisconnectPeer(request)
+        time.sleep(1)
+
+        # Alice peers response should be empty
+        request = route_guide_pb2.ListPeersRequest()
+        alice_peers = alice_stub.ListPeers(request).peers
+        print("Alice peers: %s" % alice_peers)
+        assert len(alice_peers) == 0
 
 
 if __name__ == '__main__':

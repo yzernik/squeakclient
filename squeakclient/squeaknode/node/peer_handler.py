@@ -1,6 +1,7 @@
 import logging
 
 from squeakclient.squeaknode.node.connection import Connection
+from squeakclient.squeaknode.node.peer import Peer
 
 
 logger = logging.getLogger(__name__)
@@ -14,16 +15,16 @@ class PeerHandler():
         super().__init__()
         self.node = node
 
-    def start(self, peer, connection_manager):
+    def start(self, peer_socket, address, outgoing):
         """Handles all sending and receiving of messages for the given peer.
 
         This method blocks until the peer connection has stopped.
         """
-        logger.debug('Setting up controller for peer {} ...'.format(peer))
-        peer_controller = Connection(peer, self.node, connection_manager)
-        with peer_controller as pc:
-            pc.start()
-        logger.debug('Stopped controller for peer {}.'.format(peer))
+        logger.debug('Setting up controller for peer address {} ...'.format(address))
+        with Peer(peer_socket, address, outgoing) as p:
+            with Connection(p, self.node):
+                p.stopped.wait()
+        logger.debug('Stopped controller for peer address {}.'.format(address))
 
 
 # class PeerListener(PeerMessageHandler):

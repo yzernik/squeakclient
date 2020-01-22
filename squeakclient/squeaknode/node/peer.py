@@ -32,7 +32,6 @@ class Peer(object):
         self._connect_time = time_now
         self._local_version = None
         self._remote_version = None
-        self._message_decoder = MessageDecoder()
         self._last_msg_revc_time = None
         self._last_sent_ping_nonce = None
         self._last_sent_ping_time = None
@@ -122,19 +121,9 @@ class Peer(object):
 
         This method blocks when the socket has no data to read.
         """
-        while self._recv_msg_queue.empty():
-            self._recv_msgs()
-        return self._recv_msg_queue.get()
-
-    def _recv_msgs(self):
-        recv_data = self._peer_socket.recv(SOCKET_READ_LEN)
-        if not recv_data:
-            raise Exception('Peer disconnected')
-
-        for msg in self._message_decoder.process_recv_data(recv_data):
-            self._last_msg_revc_time = time.time()
-            logger.debug('Received msg {} from {}'.format(msg, self))
-            self._recv_msg_queue.put(msg)
+        msg = self._recv_msg_queue.get()
+        logger.debug('Received msg {} from {}'.format(msg, self))
+        return msg
 
     def stop(self):
         logger.info("Stopping peer: {}".format(self))
@@ -151,41 +140,18 @@ class Peer(object):
         with self._peer_socket_lock:
             self._peer_socket.send(data)
 
-    # def record_sent_version_msg(self, version_msg):
-    #     # Set the local version.
-    #     if self._local_version is not None:
-    #         raise Exception('Local version is already set.')
-    #     self._local_version = version_msg
+    def __enter__(self):
+        logger.debug('Setting up peer {} ...'.format(self))
+        msg_receiver = MessageReceiver(self._peer_socket, self._recv_msg_queue, self.stopped)
+        threading.Thread(
+            target=msg_receiver.recv_msgs,
+            args=(),
+        ).start()
+        return self
 
-    # def record_recv_version_msg(self, version_msg):
-    #     # Set the remote version
-    #     if self._remote_version is not None:
-    #         raise Exception('Remote version is already set.')
-    #     self._remote_version = version_msg
-
-    # def record_recv_verack_msg(self, verack_msg):
-    #     if self.remote_version is not None and \
-    #        self.local_version is not None:
-    #         logger.debug('Handshake complete with {}'.format(self))
-    #         self.handshake_complete.set()
-
-    # def version_pkt(self, node):
-    #     """Get the version message for this peer."""
-    #     msg = msg_version()
-    #     local_ip, local_port = node.address
-    #     server_ip, server_port = self.address
-    #     msg.nVersion = HANDSHAKE_VERSION
-    #     msg.addrTo.ip = server_ip
-    #     msg.addrTo.port = server_port
-    #     msg.addrFrom.ip = local_ip
-    #     msg.addrFrom.port = local_port
-    #     msg.nNonce = generate_nonce()
-    #     return msg
-
-    # def send_version(self, node):
-    #     version = self.version_pkt(node)
-    #     self.record_sent_version_msg(version)
-    #     self.send_msg(version)
+    def __exit__(self, *exc):
+        self.stop.set()
+        logger.debug('Stopped peer {} ...'.format(self))
 
     def __repr__(self):
         return "Peer(%s)" % (self.address_string)
@@ -219,3 +185,31 @@ class MessageDecoder:
         if len(data) > MAX_MESSAGE_LEN:
             raise Exception('Message size too large')
         self.recv_data_buffer = BytesIO(data)
+
+
+class MessageReceiver:
+    """Reads bytes from the socket and puts messages in the receive queue.
+    """
+
+    def __init__(self, socket, queue, stopped_event):
+        self.socket = socket
+        self.queue = queue
+        self.stopped_event = stopped_event
+        self.decoder = MessageDecoder()
+
+    def _recv_msgs(self):
+        while True:
+            recv_data = self.socket.recv(SOCKET_READ_LEN)
+            if not recv_data:
+                raise Exception('Peer disconnected')
+
+            for msg in self.decoder.process_recv_data(recv_data):
+                self.queue.put(msg)
+                if self.stopped_event.is_set():
+                    return
+
+    def recv_msgs(self):
+        try:
+            self._recv_msgs()
+        except Exception:
+            self.stopped_event.set()

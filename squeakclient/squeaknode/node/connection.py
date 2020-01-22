@@ -1,7 +1,5 @@
-import threading
 import logging
 
-from squeakclient.squeaknode.node.peer_message_handler import PeerMessageHandler
 from squeakclient.squeaknode.util import generate_nonce
 
 from squeak.messages import msg_version
@@ -19,35 +17,10 @@ class Connection():
     """Commands for interacting with remote peer.
     """
 
-    def __init__(self, peer, node, connection_manager):
+    def __init__(self, peer, node):
         super().__init__()
         self.peer = peer
         self.node = node
-        self.connection_manager = connection_manager
-
-        peer_listener = PeerListener(self.peer, self.node)
-
-        self.message_listener_thread = threading.Thread(
-            target=peer_listener.start,
-        )
-        # update_thread = threading.Thread(
-        #     target=peer_message_handler.peer_controller.update,
-        # )
-
-    def start(self):
-        logger.debug('Peer thread starting... {}'.format(self.peer))
-        try:
-            self.message_listener_thread.start()
-            logger.debug('Peer message handler thread started... {}'.format(self.peer))
-
-            # Wait for the listen thread to finish
-            self.message_listener_thread.join()
-            logger.debug('Peer message handler thread stopped... {}'.format(self.peer))
-
-            # Close and remove the peer before stopping.
-            self.peer.close()
-        finally:
-            logger.debug('Peer controller stopped... {}'.format(self.peer))
 
     def handshake(self):
         if self.peer.outgoing:
@@ -91,38 +64,37 @@ class Connection():
         return msg
 
     def __enter__(self):
-        self.connection_manager.add_peer(self.peer)
-        # Do the handshake here using recv with timeouts.
+        logger.debug('Starting handshake connection with peer ... {}'.format(self.peer))
+        self.node.connection_manager.add_peer(self.peer)
         self.handshake()
-        # TODO: Start the ping checker thread/timer.
         logger.debug('Peer connection added... {}'.format(self.peer))
         return self
 
     def __exit__(self, *exc):
-        self.connection_manager.remove_peer(self.peer)
+        self.node.connection_manager.remove_peer(self.peer)
         logger.debug('Peer connection removed... {}'.format(self.peer))
 
     def _is_duplicate_nonce(self, nonce):
-        for peer in self.connection_manager.peers:
+        for peer in self.node.connection_manager.peers:
             if peer.local_version:
                 if nonce == peer.local_version.nNonce:
                     return True
         return False
 
 
-class PeerListener:
-    """Handles receiving messages from a peer.
-    """
+# class PeerListener:
+#     """Handles receiving messages from a peer.
+#     """
 
-    def __init__(self, peer, node):
-        self.peer = peer
-        self.node = node
-        self.peer_message_handler = PeerMessageHandler(peer, node)
+#     def __init__(self, peer, node):
+#         self.peer = peer
+#         self.node = node
+#         self.peer_message_handler = PeerMessageHandler(peer, node)
 
-    def start(self):
-        while True:
-            try:
-                self.peer_message_handler.handle_msgs()
-            except Exception as e:
-                logger.exception('Error in handle_msgs: {}'.format(e))
-                return
+#     def start(self):
+#         while True:
+#             try:
+#                 self.peer_message_handler.handle_msgs()
+#             except Exception as e:
+#                 logger.exception('Error in handle_msgs: {}'.format(e))
+#                 return

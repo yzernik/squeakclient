@@ -9,9 +9,7 @@ from squeakclient.squeaknode.node.access import SigningKeyAccess
 from squeakclient.squeaknode.node.access import SqueaksAccess
 from squeakclient.squeaknode.node.peer_server import PeerServer
 from squeakclient.squeaknode.node.connection_manager import ConnectionManager
-
-
-UPDATE_THREAD_SLEEP_TIME = 10
+from squeakclient.squeaknode.node.network_manager import NetworkManager
 
 
 logger = logging.getLogger(__name__)
@@ -27,6 +25,7 @@ class ClientSqueakNode(object):
         self.lightning_client = lightning_client
         self.connection_manager = ConnectionManager()
         self.peer_server = PeerServer(self.connection_manager)
+        self.network_manager = NetworkManager(self.connection_manager, self.peer_server)
         self.signing_key_access = SigningKeyAccess(self.storage)
         self.follows_access = FollowsAccess(self.storage)
         self.squeaks_access = SqueaksAccess(self.storage)
@@ -82,13 +81,17 @@ class ClientSqueakNode(object):
         self.follows_access.get_follows()
 
     def connect_host(self, host):
-        self.peer_server.connect_host(host)
+        self.network_manager.connect_host(host)
+
+    def disconnect_peer(self, address):
+        self.network_manager.disconnect_peer(address)
 
     def get_peers(self):
-        return self.peer_server.get_peers()
+        return self.network_manager.get_peers()
 
     def listen_peers_changed(self, callback):
-        self.peer_server.listen_peers_changed(callback)
+        # TODO
+        pass
 
     def get_wallet_balance(self):
         return self.lightning_client.get_wallet_balance()

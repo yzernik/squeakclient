@@ -117,17 +117,27 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
             unconfirmed_balance=response.unconfirmed_balance,
         )
 
-    def AddPeer(self, request, context):
-        host = request.addr.host
+    def ConnectHost(self, request, context):
+        host = request.host
         self.node.connect_host(host)
-        return route_guide_pb2.AddPeerResponse()
+        return route_guide_pb2.ConnectHostResponse()
+
+    def DisconnectPeer(self, request, context):
+        addr = request.addr
+        host = addr.host
+        port = addr.port
+        address = (host, port)
+        self.node.disconnect_peer(address)
+        return route_guide_pb2.DisconnectPeerResponse()
 
     def ListPeers(self, request, context):
         peers = self.node.get_peers()
         peer_msgs = [
             route_guide_pb2.Peer(
-                host=peer.address[0],
-                port=peer.address[1],
+                addr=route_guide_pb2.Addr(
+                    host=peer.address[0],
+                    port=peer.address[1],
+                ),
             )
             for peer in peers
         ]
