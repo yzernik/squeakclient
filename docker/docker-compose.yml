@@ -14,7 +14,6 @@ services:
       - RPCUSER
       - RPCPASS
       - NETWORK
-    environment:
       - DEBUG
       - MINING_ADDRESS
     ports:
@@ -37,7 +36,6 @@ services:
       - RPCUSER
       - RPCPASS
       - NETWORK
-    environment:
       - DEBUG
       - MINING_ADDRESS
     links:
