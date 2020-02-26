@@ -44,6 +44,28 @@ services:
       - "btcd:rpcserver"
     entrypoint: ["./start-btcctl.sh"]
 
+  electrum:
+    image: electrum
+    container_name: electrum
+    build:
+      context: ../
+      dockerfile: docker/electrum/Dockerfile
+    volumes:
+      - shared:/rpc
+      - bitcoin:/data
+    environment:
+      - RPCUSER
+      - RPCPASS
+      - NETWORK
+    environment:
+      - DEBUG
+      - MINING_ADDRESS
+    links:
+      - "btcd:rpcserver"
+    ports:
+      - 50002:50002
+    entrypoint: ["./start-electrum.sh"]
+
   lnd:
     image: lnd
     container_name: lnd
@@ -82,6 +104,7 @@ services:
       - lnd_dir:/root/.lnd
     links:
       - "btcd:blockchain"
+      - "electrum:electrum"
       - "lnd:lnd"
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=0
